@@ -11,7 +11,7 @@
     "@types/node": "^22.5.1"
   },
   "dependencies": {
-    "@effect/platform": "^0.77.1",
-    "effect": "^3.13.1"
+    "@effect/platform": "^0.77.2",
+    "effect": "^3.13.2"
   }
 }

@@ -11,9 +11,10 @@ import {
 } from "@effect/platform-node";
 import { ServerApi } from "@local/api";
 import { Effect, Layer } from "effect";
-import { createServer } from "node:http";
-import { MigratorLive } from "./migrator";
 import { UserGroupLive } from "./user";
+
+import { createServer } from "node:http";
+import { Drizzle } from "./drizzle";
 
 const EnvProviderLayer = Layer.unwrapEffect(
   PlatformConfigProvider.fromDotEnv(".env").pipe(
@@ -23,7 +24,7 @@ const EnvProviderLayer = Layer.unwrapEffect(
 );
 
 const MainApiLive = HttpApiBuilder.api(ServerApi).pipe(
-  Layer.provide([MigratorLive, UserGroupLive]),
+  Layer.provide([Drizzle.Default, UserGroupLive]),
   Layer.provide(EnvProviderLayer)
 );
 

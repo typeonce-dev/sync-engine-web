@@ -9,15 +9,15 @@ import { Schema } from "effect";
 export class User extends Schema.Class<User>("User")({
   id: Schema.Number,
   name: Schema.String,
-  created_at: Schema.DateFromSelf,
+  snapshot: Schema.NullOr(Schema.Array(Schema.Number)),
 }) {}
 
 class UserGroup extends HttpApiGroup.make("user")
   .add(
     HttpApiEndpoint.post("createUser")`/user/create`
-      .setPayload(Schema.Struct({ name: Schema.String }))
+      .setPayload(User.pipe(Schema.pick("name", "snapshot")))
       .addError(Schema.String)
-      .addSuccess(User)
+      .addSuccess(Schema.Array(User))
   )
   .add(
     HttpApiEndpoint.get(

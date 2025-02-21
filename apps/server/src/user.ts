@@ -1,8 +1,11 @@
 import { HttpApiBuilder } from "@effect/platform";
-import { SqlClient, SqlResolver } from "@effect/sql";
+import { SqlClient } from "@effect/sql";
 import { ServerApi, User } from "@local/api";
-import { Effect, flow, Function, Layer, Schema } from "effect";
+import { eq } from "drizzle-orm";
+import { Effect, Layer, Schema } from "effect";
 import { DatabaseLive } from "./database";
+import { usersTable } from "./db/schema";
+import { Drizzle } from "./drizzle";
 
 export const UserGroupLive = HttpApiBuilder.group(
   ServerApi,
@@ -11,16 +14,23 @@ export const UserGroupLive = HttpApiBuilder.group(
     handlers
       .handle("createUser", ({ payload }) =>
         Effect.gen(function* () {
-          const sql = yield* SqlClient.SqlClient;
+          const { query } = yield* Drizzle;
 
-          const InsertPerson = yield* SqlResolver.ordered("InsertPerson", {
-            Request: User.pipe(Schema.omit("id", "created_at")),
-            Result: User,
-            execute: (requests) =>
-              sql`INSERT INTO "user" ${sql.insert(requests)} RETURNING *`,
+          const InsertPerson = query({
+            Request: User.pipe(Schema.pick("name", "snapshot")),
+            Result: Schema.Array(User),
+            execute: async (db, { name, snapshot }) =>
+              db
+                .insert(usersTable)
+                .values({ name, snapshot: snapshot ? [...snapshot] : null })
+                .returning()
+                .execute(),
           });
 
-          return yield* InsertPerson.execute({ name: payload.name });
+          return yield* InsertPerson({
+            name: payload.name,
+            snapshot: payload.snapshot,
+          });
         }).pipe(
           Effect.tapError(Effect.logError),
           Effect.mapError((error) => error.message)
@@ -29,26 +39,24 @@ export const UserGroupLive = HttpApiBuilder.group(
       .handle("getUser", ({ path }) =>
         Effect.gen(function* () {
           const sql = yield* SqlClient.SqlClient;
+          const { query } = yield* Drizzle;
 
-          const GetById = yield* SqlResolver.findById("GetUserById", {
-            Id: Schema.Number,
-            Result: User,
-            ResultId: (_) => _.id,
-            execute: (ids) =>
-              sql`SELECT * FROM "user" WHERE ${sql.in("id", ids)}`,
+          const GetById = query({
+            Request: Schema.Number,
+            Result: Schema.Array(User),
+            execute: async (db, id) =>
+              db
+                .select()
+                .from(usersTable)
+                .where(eq(usersTable.id, id))
+                .limit(1)
+                .execute(),
           });
 
-          const getById = flow(
-            GetById.execute,
-            Effect.withRequestCaching(true)
-          );
-
-          return yield* getById(path.id).pipe(
-            Effect.flatMap(Function.identity)
-          );
+          return yield* GetById(path.id).pipe(Effect.map((users) => users[0]!));
         }).pipe(
           Effect.tapError(Effect.logError),
           Effect.mapError((error) => error.message)
         )
       )
-).pipe(Layer.provide(DatabaseLive));
+).pipe(Layer.provide([DatabaseLive, Drizzle.Default]));

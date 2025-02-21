@@ -18,11 +18,11 @@
     "vite": "^6.0.3"
   },
   "dependencies": {
-    "@effect/platform": "^0.77.1",
     "@tanstack/react-router": "^1.105.0",
-    "effect": "^3.13.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@local/api": "workspace:*"
+    "@local/api": "workspace:*",
+    "@effect/platform": "^0.77.2",
+    "effect": "^3.13.2"
   }
 }
