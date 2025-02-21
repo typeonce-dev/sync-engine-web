@@ -1,0 +1,17 @@
+{
+  "name": "@local/api",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.1"
+  },
+  "dependencies": {
+    "@effect/platform": "^0.77.1",
+    "effect": "^3.13.1"
+  }
+}
