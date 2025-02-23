@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@effect/platform": "^0.77.2",
-    "@local/api": "workspace:*",
+    "@local/sync": "workspace:*",
     "@tanstack/react-router": "^1.105.0",
     "dexie": "^4.0.11",
     "dexie-react-hooks": "^1.1.7",

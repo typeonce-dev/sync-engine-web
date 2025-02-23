@@ -1,6 +1,10 @@
 import * as _Dexie from "dexie";
 import { Data, Effect, Schema } from "effect";
-import { type UserTable } from "./schema";
+import {
+  type ClientTable,
+  type TempWorkspaceTable,
+  type WorkspaceTable,
+} from "./schema";
 
 class WriteApiError extends Data.TaggedError("WriteApiError")<{
   cause: unknown;
@@ -20,11 +24,21 @@ export class Dexie extends Effect.Service<Dexie>()("Dexie", {
   accessors: true,
   effect: Effect.gen(function* () {
     const db = new _Dexie.Dexie("_db") as _Dexie.Dexie & {
-      user: _Dexie.EntityTable<typeof UserTable.Encoded, "userId">;
+      client: _Dexie.EntityTable<typeof ClientTable.Encoded, "clientId">;
+      workspace: _Dexie.EntityTable<
+        typeof WorkspaceTable.Encoded,
+        "workspaceId"
+      >;
+      temp_workspace: _Dexie.EntityTable<
+        typeof TempWorkspaceTable.Encoded,
+        "workspaceId"
+      >;
     };
 
     db.version(1).stores({
-      user: "++userId, &name",
+      workspace: "workspaceId",
+      temp_workspace: "workspaceId",
+      client: "clientId",
     });
 
     const formAction =
@@ -60,22 +74,6 @@ export class Dexie extends Effect.Service<Dexie>()("Dexie", {
           )
         );
 
-    return {
-      db,
-
-      insertUser: formAction(
-        Schema.Struct({ name: Schema.NonEmptyString }),
-        ({ name }) => db.user.add({ userId: crypto.randomUUID(), name })
-      ),
-
-      updateUser: changeAction(
-        Schema.Struct({
-          userId: Schema.UUID,
-          name: Schema.NonEmptyString,
-        }),
-
-        ({ userId, name }) => db.user.update(userId, { name })
-      ),
-    };
+    return { db };
   }),
 }) {}
