@@ -1,0 +1,15 @@
+{
+  "name": "@local/sync",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "@effect/platform": "^0.77.2",
+    "effect": "^3.13.2"
+  }
+}

@@ -120,6 +120,15 @@ importers:
         specifier: ^22.5.1
         version: 22.13.4
 
+  packages/sync:
+    dependencies:
+      '@effect/platform':
+        specifier: ^0.77.2
+        version: 0.77.2(effect@3.13.2)
+      effect:
+        specifier: ^3.13.2
+        version: 3.13.2
+
 packages:
 
   '@ampproject/remapping@2.3.0':
