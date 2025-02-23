@@ -9,7 +9,15 @@ import { Schema } from "effect";
 export class User extends Schema.Class<User>("User")({
   id: Schema.Number,
   name: Schema.String,
-  snapshot: Schema.NullOr(Schema.Array(Schema.Number)),
+  snapshot: Schema.NullOr(
+    Schema.Uint8Array
+    // .pipe(
+    //   Schema.transform(Schema.instanceOf(Buffer), {
+    //     decode: (uint8Array) => Buffer.from(uint8Array),
+    //     encode: (buffer) => new Uint8Array(buffer),
+    //   })
+    // )
+  ),
 }) {}
 
 class UserGroup extends HttpApiGroup.make("user")

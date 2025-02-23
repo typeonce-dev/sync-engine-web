@@ -16,21 +16,21 @@ export const UserGroupLive = HttpApiBuilder.group(
         Effect.gen(function* () {
           const { query } = yield* Drizzle;
 
+          const Request = User.pipe(Schema.pick("name", "snapshot"));
           const InsertPerson = query({
-            Request: User.pipe(Schema.pick("name", "snapshot")),
-            Result: Schema.Array(User),
+            Request,
+            // Result: Schema.Array(User),
             execute: async (db, { name, snapshot }) =>
               db
                 .insert(usersTable)
-                .values({ name, snapshot: snapshot ? [...snapshot] : null })
+                .values({ name, snapshot })
                 .returning()
                 .execute(),
           });
 
-          return yield* InsertPerson({
-            name: payload.name,
-            snapshot: payload.snapshot,
-          });
+          const encodedPayload = yield* Schema.encode(Request)(payload);
+
+          return yield* InsertPerson(encodedPayload);
         }).pipe(
           Effect.tapError(Effect.logError),
           Effect.mapError((error) => error.message)
@@ -43,7 +43,7 @@ export const UserGroupLive = HttpApiBuilder.group(
 
           const GetById = query({
             Request: Schema.Number,
-            Result: Schema.Array(User),
+            // Result: Schema.Array(User),
             execute: async (db, id) =>
               db
                 .select()

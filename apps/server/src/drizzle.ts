@@ -34,14 +34,14 @@ export class Drizzle extends Effect.Service<Drizzle>()("Drizzle", {
     );
 
     const query =
-      <RQI, RQA, RSI, RSA>({
+      <RQI, RQA, RSA>({
         Request,
-        Result,
+        // Result,
         execute,
       }: {
         Request: Schema.Schema<RQA, RQI>;
-        Result: Schema.Schema<RSA, RSI>;
-        execute: (_: typeof db, __: RQA) => Promise<RSI>;
+        // Result: Schema.Schema<RSA, RSI>;
+        execute: (_: typeof db, __: RQA) => Promise<RSA>;
       }) =>
       (params: RQI) =>
         Schema.decode(Request)(params).pipe(
@@ -50,9 +50,10 @@ export class Drizzle extends Effect.Service<Drizzle>()("Drizzle", {
               try: () => execute(db, _),
               catch: (error) => new QueryError({ cause: error }),
             })
-          ),
-          Effect.flatMap(Schema.decode(Result))
+          )
+          // Effect.flatMap(Schema.decode(Result))
         );
+
     return { db, query };
   }),
 }) {}

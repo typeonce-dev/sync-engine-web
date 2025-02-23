@@ -15,14 +15,19 @@
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.2",
-    "vite": "^6.0.3"
+    "vite": "^6.0.3",
+    "vite-plugin-top-level-await": "^1.5.0",
+    "vite-plugin-wasm": "^3.4.1"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.105.0",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "@local/api": "workspace:*",
     "@effect/platform": "^0.77.2",
-    "effect": "^3.13.2"
+    "@local/api": "workspace:*",
+    "@tanstack/react-router": "^1.105.0",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
+    "effect": "^3.13.2",
+    "loro-crdt": "^1.4.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }
