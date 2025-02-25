@@ -10,7 +10,7 @@ export class WorkspaceTable extends Schema.Class<WorkspaceTable>(
 )({
   workspaceId: WorkspaceId,
   snapshot: Snapshot,
-  token: Schema.String,
+  token: Schema.NullOr(Schema.String),
 
   version: Schema.Uint8Array,
 }) {}

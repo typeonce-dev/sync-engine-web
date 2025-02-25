@@ -6,6 +6,10 @@ import {
   type WorkspaceTable,
 } from "./schema";
 
+class QueryApiError extends Data.TaggedError("QueryApiError")<{
+  cause: unknown;
+}> {}
+
 class WriteApiError extends Data.TaggedError("WriteApiError")<{
   cause: unknown;
 }> {}
@@ -36,10 +40,24 @@ export class Dexie extends Effect.Service<Dexie>()("Dexie", {
     };
 
     db.version(1).stores({
+      client: "clientId",
       workspace: "workspaceId",
       temp_workspace: "workspaceId",
-      client: "clientId",
     });
+
+    const query = <T>(execute: (_: typeof db) => Promise<T>) =>
+      Effect.tryPromise({
+        try: () => execute(db),
+        catch: (error) => new QueryApiError({ cause: error }),
+      }).pipe(Effect.tapErrorCause(Effect.logError));
+
+    const initClient = query((_) => _.client.toCollection().last()).pipe(
+      Effect.map((client) => client?.clientId),
+      Effect.flatMap(Effect.fromNullable),
+      Effect.orElse(() =>
+        query((_) => _.client.add({ clientId: crypto.randomUUID() }))
+      )
+    );
 
     const formAction =
       <const R extends string, I, T>(
@@ -74,6 +92,6 @@ export class Dexie extends Effect.Service<Dexie>()("Dexie", {
           )
         );
 
-    return { db };
+    return { db, initClient, query };
   }),
 }) {}
