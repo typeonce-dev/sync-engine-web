@@ -52,7 +52,14 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
         })
       )
       .addError(Schema.String)
-      .addSuccess(Schema.Struct({ token: Schema.String }))
+      .addSuccess(
+        Schema.Struct({
+          token: Schema.String,
+          workspaceId: WorkspaceTable.fields.workspaceId,
+          createdAt: WorkspaceTable.fields.createdAt,
+          snapshot: WorkspaceTable.fields.snapshot,
+        })
+      )
   )
   .add(
     /**

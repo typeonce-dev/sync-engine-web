@@ -13,10 +13,10 @@ function HomeComponent() {
   const allWorkspaces = Route.useLoaderData();
   const navigate = useNavigate();
 
-  const [, putWorkspace] = useActionEffect((formData: FormData | undefined) =>
+  const [, joinWorkspace] = useActionEffect((formData: FormData | undefined) =>
     Effect.gen(function* () {
       const workspaceId = formData?.get("workspaceId") as string | null;
-      const workspace = yield* WorkspaceManager.putCurrent(
+      const workspace = yield* WorkspaceManager.createOrJoin(
         workspaceId ?? undefined
       );
       yield* Effect.sync(() =>
@@ -41,13 +41,13 @@ function HomeComponent() {
         </Link>
       ))}
 
-      <form action={putWorkspace}>
+      <form action={joinWorkspace}>
         <input type="text" name="workspaceId" placeholder="Workspace id" />
         <button type="submit">Switch workspace</button>
       </form>
 
       <div>
-        <button type="button" onClick={() => putWorkspace(undefined)}>
+        <button type="button" onClick={() => joinWorkspace(undefined)}>
           Create workspace
         </button>
       </div>

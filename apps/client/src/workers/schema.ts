@@ -1,7 +1,7 @@
 import { Schema } from "effect";
 
 export class Bootstrap extends Schema.TaggedRequest<Bootstrap>()("Bootstrap", {
-  failure: Schema.Never,
+  failure: Schema.String,
   payload: { workspaceId: Schema.String },
   success: Schema.Boolean,
 }) {}
