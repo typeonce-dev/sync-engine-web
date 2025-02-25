@@ -6,6 +6,19 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "noUncheckedIndexedAccess": true,
+    // "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }

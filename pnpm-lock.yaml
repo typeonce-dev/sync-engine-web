@@ -23,6 +23,9 @@ importers:
       '@effect/platform':
         specifier: ^0.77.2
         version: 0.77.2(effect@3.13.2)
+      '@effect/platform-browser':
+        specifier: ^0.56.2
+        version: 0.56.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)
       '@local/sync':
         specifier: workspace:*
         version: link:../../packages/sync
@@ -234,6 +237,12 @@ packages:
         optional: true
       ws:
         optional: true
+
+  '@effect/platform-browser@0.56.2':
+    resolution: {integrity: sha512-mzCNipg3FN9/ATPEO7Cc3cLmTF4gtdoQSVVi5RPJzIxXflVHbNmMFSIuFdGp0W3AbrQ20dfF6FGFaRUo3aFHeA==}
+    peerDependencies:
+      '@effect/platform': ^0.77.2
+      effect: ^3.13.2
 
   '@effect/platform-node-shared@0.27.1':
     resolution: {integrity: sha512-z3zQTwLiH3S/TcFv736F7ncAwqHU/PGW4VJeHy3ptwgaXq4QZGabn7pdE1Plx3eTcQaFNqVgeSgLoGlEKAo4rw==}
@@ -1970,6 +1979,12 @@ snapshots:
     optionalDependencies:
       '@effect/platform-node': 0.73.1(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)
       ws: 8.18.0
+
+  '@effect/platform-browser@0.56.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)':
+    dependencies:
+      '@effect/platform': 0.77.2(effect@3.13.2)
+      effect: 3.13.2
+      multipasta: 0.2.5
 
   '@effect/platform-node-shared@0.27.1(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)':
     dependencies:
