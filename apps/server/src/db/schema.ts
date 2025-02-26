@@ -1,11 +1,41 @@
-import { customType, integer, pgTable, varchar } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  customType,
+  integer,
+  pgEnum,
+  pgTable,
+  timestamp,
+  uuid,
+  varchar,
+} from "drizzle-orm/pg-core";
+
+const scope = pgEnum("scope", ["read", "read_write"]);
 
 const bytea = customType<{ data: Uint8Array }>({
   dataType: () => "bytea",
 });
 
-export const usersTable = pgTable("users", {
-  id: integer().primaryKey().generatedAlwaysAsIdentity(),
-  name: varchar({ length: 255 }).notNull(),
-  snapshot: bytea(),
+export const workspaceTable = pgTable("workspace", {
+  workspaceId: uuid().notNull(),
+  ownerClientId: uuid().notNull(),
+  clientId: uuid().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+  snapshot: bytea().notNull(),
+});
+
+export const clientTable = pgTable("client", {
+  clientId: uuid().notNull(),
+  createdAt: timestamp().notNull().defaultNow(),
+});
+
+export const tokenTable = pgTable("token", {
+  tokenId: integer().primaryKey().generatedAlwaysAsIdentity(),
+  tokenValue: varchar().notNull(),
+  clientId: uuid().notNull(),
+  workspaceId: uuid().notNull(),
+  isMaster: boolean().notNull().default(false),
+  scope: scope().notNull(),
+  issuedAt: timestamp().notNull().defaultNow(),
+  expiresAt: timestamp(),
+  revokedAt: timestamp(),
 });

@@ -5,9 +5,13 @@
     "typecheck": "tsc"
   },
   "exports": {
-    ".": "./src/main.ts"
+    ".": "./src/main.ts",
+    "./loro": "./src/loro.ts"
   },
   "devDependencies": {},
+  "peerDependencies": {
+    "loro-crdt": "^1.4.2"
+  },
   "dependencies": {
     "@effect/platform": "^0.77.2",
     "effect": "^3.13.2"

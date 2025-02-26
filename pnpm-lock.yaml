@@ -118,6 +118,9 @@ importers:
       effect:
         specifier: ^3.13.2
         version: 3.13.2
+      loro-crdt:
+        specifier: ^1.4.2
+        version: 1.4.2
 
 packages:
 

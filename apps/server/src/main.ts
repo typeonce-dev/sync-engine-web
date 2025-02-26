@@ -9,12 +9,12 @@ import {
   NodeHttpServer,
   NodeRuntime,
 } from "@effect/platform-node";
-import { ServerApi } from "@local/api";
+import { SyncApi } from "@local/sync";
 import { Effect, Layer } from "effect";
-import { UserGroupLive } from "./user";
-
 import { createServer } from "node:http";
 import { Drizzle } from "./drizzle";
+import { SyncAuthGroupLive } from "./group/sync-auth";
+import { SyncDataGroupLive } from "./group/sync-data";
 
 const EnvProviderLayer = Layer.unwrapEffect(
   PlatformConfigProvider.fromDotEnv(".env").pipe(
@@ -23,8 +23,8 @@ const EnvProviderLayer = Layer.unwrapEffect(
   )
 );
 
-const MainApiLive = HttpApiBuilder.api(ServerApi).pipe(
-  Layer.provide([Drizzle.Default, UserGroupLive]),
+const MainApiLive = HttpApiBuilder.api(SyncApi).pipe(
+  Layer.provide([Drizzle.Default, SyncDataGroupLive, SyncAuthGroupLive]),
   Layer.provide(EnvProviderLayer)
 );
 
