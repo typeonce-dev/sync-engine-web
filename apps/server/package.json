@@ -12,6 +12,7 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^22.5.1",
     "drizzle-kit": "^0.30.4",
     "tsx": "^4.19.2"
@@ -24,6 +25,7 @@
     "@local/sync": "workspace:*",
     "drizzle-orm": "^0.39.3",
     "effect": "^3.13.2",
+    "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.3"
   }
 }

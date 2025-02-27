@@ -1,6 +1,6 @@
 import { HttpApiBuilder } from "@effect/platform";
 import { SyncApi } from "@local/sync";
-import { LoroSchemaTransform } from "@local/sync/loro";
+import { SnapshotToLoroDoc } from "@local/sync/loro";
 import { and, eq } from "drizzle-orm";
 import { Array, Effect, Layer, Schema } from "effect";
 import { workspaceTable } from "../db/schema";
@@ -17,7 +17,7 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
           "push",
           ({ payload: { clientId, snapshot }, path: { workspaceId } }) =>
             Effect.gen(function* () {
-              const doc = yield* Schema.encode(LoroSchemaTransform)(snapshot);
+              const doc = yield* Schema.decode(SnapshotToLoroDoc)(snapshot);
 
               const workspace = yield* query({
                 Request: Schema.Struct({
@@ -39,26 +39,29 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
 
               doc.import(workspace.snapshot); // 🪄
 
-              const newSnapshot =
-                yield* Schema.decode(LoroSchemaTransform)(doc);
+              const newSnapshot = yield* Schema.encode(SnapshotToLoroDoc)(doc);
 
-              yield* query({
+              const newWorkspace = yield* query({
                 Request: Schema.Struct({
-                  newSnapshot: Schema.Uint8Array,
+                  newSnapshot: Schema.Uint8ArrayFromSelf,
                 }),
                 execute: (db, { newSnapshot: snapshot }) =>
-                  db.insert(workspaceTable).values({
-                    snapshot,
-                    clientId: workspace.clientId,
-                    workspaceId: workspace.workspaceId,
-                    ownerClientId: workspace.ownerClientId,
-                    // createdAt
-                  }),
-              })({ newSnapshot });
+                  db
+                    .insert(workspaceTable)
+                    .values({
+                      snapshot,
+                      clientId: workspace.clientId,
+                      workspaceId: workspace.workspaceId,
+                      ownerClientId: workspace.ownerClientId,
+                    })
+                    .returning(),
+              })({ newSnapshot }).pipe(Effect.flatMap(Array.head));
 
-              return yield* Effect.fail({
-                message: "Not (fully) implemented" as const,
-              });
+              return {
+                workspaceId: newWorkspace.workspaceId,
+                createdAt: newWorkspace.createdAt,
+                snapshot: newWorkspace.snapshot,
+              };
             }).pipe(Effect.mapError((error) => error.message))
         )
         .handle("pull", ({ path: { workspaceId } }) =>

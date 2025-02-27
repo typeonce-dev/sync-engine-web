@@ -5,7 +5,7 @@ import {
   HttpApiSchema,
 } from "@effect/platform";
 import { Schema } from "effect";
-import { LoroSchemaTransform } from "./loro";
+import { Snapshot } from "./loro";
 
 export const ClientId = Schema.UUID;
 export const WorkspaceId = Schema.UUID;
@@ -23,7 +23,7 @@ export class WorkspaceTable extends Schema.Class<WorkspaceTable>(
   ownerClientId: ClientId,
   createdAt: Schema.DateFromString,
   clientId: ClientId,
-  snapshot: LoroSchemaTransform,
+  snapshot: Snapshot,
 }) {}
 
 export class TokenTable extends Schema.Class<TokenTable>("TokenTable")({

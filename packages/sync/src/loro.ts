@@ -43,26 +43,41 @@ const SnapshotSchemaTransform = Schema.instanceOf(LoroDoc<LoroSchema>).pipe(
 );
 
 export const Snapshot = Schema.Uint8Array;
-export const LoroSchemaTransform = Schema.instanceOf(LoroDoc<LoroSchema>).pipe(
-  Schema.transformOrFail(Snapshot, {
+export const SnapshotToLoroDoc = Schema.Uint8ArrayFromSelf.pipe(
+  Schema.transformOrFail(Schema.instanceOf(LoroDoc<LoroSchema>), {
     decode: (from, _, ast) =>
-      Schema.encode(Snapshot)(from.export({ mode: "snapshot" })).pipe(
+      Effect.gen(function* () {
+        const doc = new LoroDoc<LoroSchema>();
+        doc.import(from);
+
+        // TODO: This?
+        yield* Schema.decodeUnknown(SnapshotSchema)(doc.toJSON());
+
+        return doc;
+      }).pipe(
         Effect.mapError(
           (error) => new ParseResult.Type(ast, from, error.message)
         )
       ),
 
     encode: (to, _, ast) =>
-      Schema.decode(Snapshot)(to).pipe(
-        Effect.flatMap((data) =>
-          Effect.gen(function* () {
-            const doc = new LoroDoc<LoroSchema>();
-            doc.import(data);
-            yield* Schema.decodeUnknown(SnapshotSchema)(doc.toJSON());
-            return doc;
-          })
-        ),
+      Schema.encode(Snapshot)(to.export({ mode: "snapshot" })).pipe(
+        Effect.flatMap(Schema.decode(Snapshot)),
         Effect.mapError((error) => new ParseResult.Type(ast, to, error.message))
       ),
   })
 );
+
+// const swap = <A, I, R>(
+//   schema: Schema.Schema<A, I, R>
+// ): Schema.Schema<I, A, R> =>
+//   Schema.transformOrFail(
+//     Schema.typeSchema(schema),
+//     Schema.encodedSchema(schema),
+//     {
+//       decode: ParseResult.encode(schema),
+//       encode: ParseResult.decode(schema),
+//     }
+//   );
+
+// export const LoroDocSchema = Schema.compose( LoroSchemaTransform, Snapshot);

@@ -1,6 +1,7 @@
 import { WorkerRunner } from "@effect/platform";
 import { BrowserWorkerRunner } from "@effect/platform-browser";
 import { Effect, Layer } from "effect";
+import { LoroDoc } from "loro-crdt";
 import { ApiClient } from "../lib/api-client";
 import { Dexie } from "../lib/dexie";
 import { RuntimeClient } from "../lib/runtime-client";
@@ -66,12 +67,15 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
           )
         );
 
+        const doc = new LoroDoc();
+        doc.import(response.snapshot);
+
         yield* manager
           .put({
             workspaceId: response.workspaceId,
             snapshot: response.snapshot,
             token: response.token,
-            version: new Uint8Array(), // TODO
+            version: doc.version().encode(),
           })
           .pipe(Effect.mapError(() => "Put workspace error"));
 
