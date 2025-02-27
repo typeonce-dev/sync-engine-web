@@ -1,4 +1,6 @@
+import { type LoroSchema, Snapshot } from "@local/sync/loro";
 import { Effect, Schema } from "effect";
+import { LoroDoc } from "loro-crdt";
 import { Dexie } from "../dexie";
 import { WorkspaceTable } from "../schema";
 
@@ -33,19 +35,32 @@ export class WorkspaceManager extends Effect.Service<WorkspaceManager>()(
               .equals(workspaceId)
               .limit(1)
               .first()
-          ).pipe(Effect.flatMap(Effect.fromNullable)),
+          ).pipe(
+            Effect.flatMap((workspace) =>
+              workspace === undefined
+                ? Effect.succeed(undefined)
+                : Schema.decode(WorkspaceTable)(workspace)
+            )
+          ),
 
         createOrJoin: (workspaceId: string | undefined) =>
           query((_) =>
             _.workspace.toCollection().modify({ current: false })
           ).pipe(
             Effect.andThen(
+              Schema.encode(Snapshot)(
+                new LoroDoc<LoroSchema>().export({
+                  mode: "snapshot",
+                })
+              )
+            ),
+            Effect.flatMap((snapshot) =>
               query((_) =>
                 _.workspace.put({
-                  workspaceId: workspaceId ?? crypto.randomUUID(),
-                  version: [],
-                  snapshot: [],
+                  snapshot,
                   token: null,
+                  version: null,
+                  workspaceId: workspaceId ?? crypto.randomUUID(),
                 })
               )
             ),

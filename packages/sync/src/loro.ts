@@ -1,16 +1,18 @@
 import { Effect, ParseResult, Schema } from "effect";
 import { LoroDoc, LoroList, LoroMap } from "loro-crdt";
 
-type LoroSchema = {
+export type LoroSchema = {
   activity: LoroList<LoroMap<typeof Activity.Encoded>>;
 };
 
-class Activity extends Schema.Class<Activity>("Activity")({
+export class Activity extends Schema.Class<Activity>("Activity")({
   id: Schema.UUID,
   name: Schema.String,
 }) {}
 
-class SnapshotSchema extends Schema.Class<SnapshotSchema>("SnapshotSchema")({
+export class SnapshotSchema extends Schema.Class<SnapshotSchema>(
+  "SnapshotSchema"
+)({
   activity: Schema.Array(Activity),
 }) {}
 

@@ -19,6 +19,8 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
             Effect.gen(function* () {
               const doc = yield* Schema.decode(SnapshotToLoroDoc)(snapshot);
 
+              yield* Effect.log(`Pushing workspace ${workspaceId}`);
+
               const workspace = yield* query({
                 Request: Schema.Struct({
                   workspaceId: Schema.UUID,
@@ -62,7 +64,10 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
                 createdAt: newWorkspace.createdAt,
                 snapshot: newWorkspace.snapshot,
               };
-            }).pipe(Effect.mapError((error) => error.message))
+            }).pipe(
+              Effect.tapErrorCause(Effect.logError),
+              Effect.mapError((error) => error.message)
+            )
         )
         .handle("pull", ({ path: { workspaceId } }) =>
           Effect.fail("Not implemented")

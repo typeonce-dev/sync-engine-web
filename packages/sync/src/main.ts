@@ -144,11 +144,11 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
     )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/sync`
       .setPayload(WorkspaceTable.pipe(Schema.pick("clientId", "snapshot")))
       .addError(Schema.String)
-      .setHeaders(
-        Schema.Struct({
-          Authorization: Schema.String,
-        })
-      )
+      // .setHeaders(
+      //   Schema.Struct({
+      //     Authorization: Schema.String,
+      //   })
+      // )
       .addSuccess(
         WorkspaceTable.pipe(Schema.pick("workspaceId", "createdAt", "snapshot"))
       )

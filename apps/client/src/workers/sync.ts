@@ -22,22 +22,25 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
 
       const workspace = yield* manager
         .getById({ workspaceId: params.workspaceId })
-        .pipe(Effect.mapError(() => "Get workspace error"));
+        .pipe(
+          Effect.flatMap(Effect.fromNullable),
+          Effect.mapError(() => "Get workspace error")
+        );
 
       const clientId = yield* initClient.pipe(
         Effect.mapError(() => "Init client error")
       );
 
       const tempUpdates = yield* temp
-        .get({ workspaceId: workspace.workspaceId })
+        .getById({ workspaceId: workspace.workspaceId })
         .pipe(Effect.mapError(() => "Get temp workspace error"));
 
-      if (tempUpdates !== null) {
+      if (tempUpdates !== undefined) {
         const response = yield* Effect.fromNullable(workspace.token).pipe(
           Effect.flatMap((token) =>
             client.syncData
               .push({
-                headers: { Authorization: `Bearer ${token}` },
+                // headers: { Authorization: `Bearer ${token}` },
                 path: { workspaceId: workspace.workspaceId },
                 payload: { clientId, snapshot: tempUpdates.snapshot },
               })
@@ -78,6 +81,10 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
             version: doc.version().encode(),
           })
           .pipe(Effect.mapError(() => "Put workspace error"));
+
+        yield* temp
+          .clean({ workspaceId: workspace.workspaceId })
+          .pipe(Effect.mapError(() => "Clean temp workspace error"));
 
         yield* Effect.log("Sync completed");
       } else {

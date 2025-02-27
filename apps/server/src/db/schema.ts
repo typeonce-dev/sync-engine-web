@@ -9,9 +9,9 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
-const scope = pgEnum("scope", ["read", "read_write"]);
+export const scope = pgEnum("scope", ["read", "read_write"]);
 
-const bytea = customType<{ data: Uint8Array }>({
+export const bytea = customType<{ data: Uint8Array }>({
   dataType: () => "bytea",
 });
 

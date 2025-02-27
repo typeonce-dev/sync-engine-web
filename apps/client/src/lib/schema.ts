@@ -13,7 +13,7 @@ export class WorkspaceTable extends Schema.Class<WorkspaceTable>(
   snapshot: Snapshot,
   token: Schema.NullOr(Schema.String),
 
-  version: Schema.Uint8Array,
+  version: Schema.NullOr(Schema.Uint8Array),
 }) {}
 
 export class TempWorkspaceTable extends Schema.Class<TempWorkspaceTable>(

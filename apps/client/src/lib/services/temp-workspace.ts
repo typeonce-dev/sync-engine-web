@@ -14,7 +14,7 @@ export class TempWorkspace extends Effect.Service<TempWorkspace>()(
             Effect.flatMap((data) => query((_) => _.temp_workspace.put(data)))
           ),
 
-        get: ({ workspaceId }: { workspaceId: string }) =>
+        getById: ({ workspaceId }: { workspaceId: string }) =>
           query((_) =>
             _.temp_workspace
               .where("workspaceId")
@@ -22,8 +22,11 @@ export class TempWorkspace extends Effect.Service<TempWorkspace>()(
               .limit(1)
               .first()
           ).pipe(
-            Effect.flatMap(Effect.fromNullable),
-            Effect.flatMap(Schema.decode(TempWorkspaceTable))
+            Effect.flatMap((workspace) =>
+              workspace === undefined
+                ? Effect.succeed(undefined)
+                : Schema.decode(TempWorkspaceTable)(workspace)
+            )
           ),
 
         clean: ({ workspaceId }: { workspaceId: string }) =>
