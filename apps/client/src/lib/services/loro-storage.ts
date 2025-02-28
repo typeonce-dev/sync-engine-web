@@ -64,7 +64,11 @@ export class LoroStorage extends Effect.Service<LoroStorage>()("LoroStorage", {
                 from: new VersionVector(workspace.version),
               });
 
-        return yield* temp.put({ workspaceId, snapshot: snapshotExport });
+        return yield* temp.put({
+          workspaceId,
+          snapshot: snapshotExport,
+          snapshotId: crypto.randomUUID(),
+        });
       });
 
     return {

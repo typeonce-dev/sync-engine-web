@@ -74,6 +74,7 @@ const main = (params: { workspaceId: string }) =>
                           yield* push({
                             workspace,
                             snapshot,
+                            snapshotId: message.snapshotId,
                           });
                         }
                       })

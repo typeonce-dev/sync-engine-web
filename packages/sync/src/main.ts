@@ -9,6 +9,7 @@ import { Snapshot } from "./loro";
 
 export const ClientId = Schema.UUID;
 export const WorkspaceId = Schema.UUID;
+export const SnapshotId = Schema.UUID;
 export const Scope = Schema.Literal("read", "read_write");
 
 export class ClientTable extends Schema.Class<ClientTable>("ClientTable")({
@@ -23,6 +24,7 @@ export class WorkspaceTable extends Schema.Class<WorkspaceTable>(
   ownerClientId: ClientId,
   createdAt: Schema.DateFromString,
   clientId: ClientId,
+  snapshotId: SnapshotId,
   snapshot: Snapshot,
 }) {}
 
@@ -48,6 +50,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
         Schema.Struct({
           clientId: ClientId,
           workspaceId: WorkspaceId,
+          snapshotId: SnapshotId,
           snapshot: WorkspaceTable.fields.snapshot,
         })
       )
@@ -142,7 +145,9 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
     HttpApiEndpoint.put(
       "push"
     )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/sync`
-      .setPayload(WorkspaceTable.pipe(Schema.pick("clientId", "snapshot")))
+      .setPayload(
+        WorkspaceTable.pipe(Schema.pick("clientId", "snapshot", "snapshotId"))
+      )
       .addError(Schema.String)
       // .setHeaders(
       //   Schema.Struct({

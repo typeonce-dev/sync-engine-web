@@ -19,6 +19,7 @@ export const workspaceTable = pgTable("workspace", {
   workspaceId: uuid().notNull(),
   ownerClientId: uuid().notNull(),
   clientId: uuid().notNull(),
+  snapshotId: uuid().notNull().unique(),
   createdAt: timestamp().notNull().defaultNow(),
   snapshot: bytea().notNull(),
 });

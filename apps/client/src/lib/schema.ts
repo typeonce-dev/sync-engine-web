@@ -1,4 +1,4 @@
-import { ClientId, WorkspaceId } from "@local/sync";
+import { ClientId, SnapshotId, WorkspaceId } from "@local/sync";
 import { Snapshot } from "@local/sync/loro";
 import { Schema } from "effect";
 
@@ -21,4 +21,5 @@ export class TempWorkspaceTable extends Schema.Class<TempWorkspaceTable>(
 )({
   workspaceId: WorkspaceId,
   snapshot: Snapshot,
+  snapshotId: SnapshotId,
 }) {}

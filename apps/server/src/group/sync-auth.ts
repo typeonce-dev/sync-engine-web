@@ -51,6 +51,7 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
                   clientId,
                   workspaceId,
                   ownerClientId: clientId,
+                  snapshotId: payload.snapshotId,
                 }),
             })({
               clientId: payload.clientId,

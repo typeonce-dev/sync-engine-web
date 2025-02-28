@@ -1,5 +1,5 @@
 {
-  "id": "b2e29f84-dda2-4aeb-bb8b-e99481c2f2c1",
+  "id": "710fed2b-4b98-4e23-b4d0-d6dc775c98fe",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -133,6 +133,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "snapshotId": {
+          "name": "snapshotId",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
         "createdAt": {
           "name": "createdAt",
           "type": "timestamp",
@@ -150,7 +156,15 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "workspace_snapshotId_unique": {
+          "name": "workspace_snapshotId_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "snapshotId"
+          ]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

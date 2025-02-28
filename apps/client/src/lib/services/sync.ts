@@ -1,10 +1,10 @@
 import { Effect } from "effect";
+import { LoroDoc } from "loro-crdt";
 import { ApiClient } from "../api-client";
 import { Dexie } from "../dexie";
 import type { WorkspaceTable } from "../schema";
 import { TempWorkspace } from "./temp-workspace";
 import { WorkspaceManager } from "./workspace-manager";
-import { LoroDoc } from "loro-crdt";
 
 export class Sync extends Effect.Service<Sync>()("Sync", {
   dependencies: [
@@ -23,8 +23,10 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
       push: ({
         snapshot,
         workspace,
+        snapshotId,
       }: {
         workspace: WorkspaceTable;
+        snapshotId: string;
         snapshot: globalThis.Uint8Array;
       }) =>
         Effect.gen(function* () {
@@ -38,7 +40,7 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
                   path: {
                     workspaceId: workspace.workspaceId,
                   },
-                  payload: { clientId, snapshot },
+                  payload: { clientId, snapshot, snapshotId },
                 })
                 .pipe(
                   Effect.map((response) => ({
@@ -53,6 +55,7 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
                   payload: {
                     clientId,
                     snapshot,
+                    snapshotId,
                     workspaceId: workspace.workspaceId,
                   },
                 })

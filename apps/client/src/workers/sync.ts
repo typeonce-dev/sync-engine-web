@@ -26,7 +26,11 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
       });
 
       if (tempUpdates !== undefined) {
-        yield* push({ snapshot: tempUpdates.snapshot, workspace });
+        yield* push({
+          workspace,
+          snapshot: tempUpdates.snapshot,
+          snapshotId: tempUpdates.snapshotId,
+        });
         yield* Effect.log("Sync completed");
       } else {
         yield* Effect.log("No sync updates");

@@ -20,6 +20,8 @@ CREATE TABLE "workspace" (
 	"workspaceId" uuid NOT NULL,
 	"ownerClientId" uuid NOT NULL,
 	"clientId" uuid NOT NULL,
+	"snapshotId" uuid NOT NULL,
 	"createdAt" timestamp DEFAULT now() NOT NULL,
-	"snapshot" "bytea" NOT NULL
+	"snapshot" "bytea" NOT NULL,
+	CONSTRAINT "workspace_snapshotId_unique" UNIQUE("snapshotId")
 );

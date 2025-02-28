@@ -15,7 +15,10 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
       return handlers
         .handle(
           "push",
-          ({ payload: { clientId, snapshot }, path: { workspaceId } }) =>
+          ({
+            payload: { clientId, snapshot, snapshotId },
+            path: { workspaceId },
+          }) =>
             Effect.gen(function* () {
               const doc = yield* Schema.decode(SnapshotToLoroDoc)(snapshot);
 
@@ -53,6 +56,7 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
                     .insert(workspaceTable)
                     .values({
                       snapshot,
+                      snapshotId,
                       clientId: workspace.clientId,
                       workspaceId: workspace.workspaceId,
                       ownerClientId: workspace.ownerClientId,
