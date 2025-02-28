@@ -1,7 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform";
 import { SyncApi } from "@local/sync";
 import { SnapshotToLoroDoc } from "@local/sync/loro";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { Array, Effect, Layer, Schema } from "effect";
 import { workspaceTable } from "../db/schema";
 import { Drizzle } from "../drizzle";
@@ -36,6 +36,7 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
                         eq(workspaceTable.clientId, clientId)
                       )
                     )
+                    .orderBy(desc(workspaceTable.createdAt))
                     .limit(1),
               })({ clientId, workspaceId }).pipe(Effect.flatMap(Array.head));
 

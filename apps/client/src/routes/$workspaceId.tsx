@@ -2,13 +2,13 @@ import { Worker } from "@effect/platform";
 import { BrowserWorker } from "@effect/platform-browser";
 import { createFileRoute } from "@tanstack/react-router";
 import { Effect } from "effect";
-import { startTransition } from "react";
+import { startTransition, useEffect } from "react";
 import { useActivity } from "../lib/hooks/use-activity";
 import { RuntimeClient } from "../lib/runtime-client";
 import { LoroStorage } from "../lib/services/loro-storage";
 import { WorkspaceManager } from "../lib/services/workspace-manager";
 import { useActionEffect } from "../lib/use-action-effect";
-import { Bootstrap } from "../workers/schema";
+import { Bootstrap, LiveQuery } from "../workers/schema";
 
 export const Route = createFileRoute("/$workspaceId")({
   component: RouteComponent,
@@ -61,6 +61,31 @@ function RouteComponent() {
       });
     })
   );
+
+  useEffect(() => {
+    const url = new URL("./src/workers/live.ts", globalThis.origin);
+    const newWorker = new globalThis.Worker(url, { type: "module" });
+
+    void RuntimeClient.runPromise(
+      Effect.gen(function* () {
+        const pool = yield* Worker.makePoolSerialized({ size: 1 });
+        return yield* pool.broadcast(
+          new LiveQuery({ workspaceId: workspace.workspaceId })
+        );
+      }).pipe(
+        Effect.scoped,
+        Effect.provide(BrowserWorker.layer(() => newWorker))
+      )
+    );
+
+    newWorker.onerror = (error) => {
+      console.error("Live query worker error", error);
+    };
+
+    return () => {
+      newWorker.terminate();
+    };
+  }, []);
 
   return (
     <div>
