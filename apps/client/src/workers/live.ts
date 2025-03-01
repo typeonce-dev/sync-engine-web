@@ -101,10 +101,12 @@ const WorkerLive = WorkerRunner.layer((params: LiveQuery) =>
     Effect.gen(function* () {
       yield* Effect.log("Startup live query connection");
 
-      yield* Effect.fork(main({ workspaceId: params.workspaceId }));
-      yield* Effect.forever(Effect.never);
+      yield* Effect.addFinalizer(() =>
+        Effect.log("Closed live query connection")
+      );
 
-      yield* Effect.log("Closed live query connection");
+      yield* Effect.fork(main({ workspaceId: params.workspaceId }));
+      yield* Effect.never;
     }).pipe(Effect.mapError(() => "Live query error"))
   )
 ).pipe(Layer.provide(BrowserWorkerRunner.layer));

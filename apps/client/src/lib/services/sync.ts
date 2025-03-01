@@ -36,11 +36,9 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
             Effect.flatMap((token) =>
               client.syncData
                 .push({
-                  // headers: { Authorization: `Bearer ${token}` },
-                  path: {
-                    workspaceId: workspace.workspaceId,
-                  },
-                  payload: { clientId, snapshot, snapshotId },
+                  headers: { "x-api-key": token },
+                  path: { workspaceId: workspace.workspaceId },
+                  payload: { snapshot, snapshotId },
                 })
                 .pipe(
                   Effect.map((response) => ({

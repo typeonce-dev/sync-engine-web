@@ -8,3 +8,5 @@
 5. Sync: Clients edit locally, sync with server using their token.
 6. Revoke: Owner revokes access, collaborator’s token fails.
 7. Expiry: Client handles token expiration gracefully.
+
+> Allow user to check all changes (syncs) by selecting history by `workspaceId` (`"read"` scope?)

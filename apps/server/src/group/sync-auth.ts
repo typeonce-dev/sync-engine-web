@@ -1,69 +1,96 @@
 import { HttpApiBuilder } from "@effect/platform";
 import { SyncApi, type Scope } from "@local/sync";
-import { Config, Effect, Layer, Redacted, Schema } from "effect";
-import * as jwt from "jsonwebtoken";
-import { workspaceTable } from "../db/schema";
+import { eq } from "drizzle-orm";
+import { Effect, Layer, Schema } from "effect";
+import { tokenTable, workspaceTable } from "../db/schema";
 import { Drizzle } from "../drizzle";
-
-interface TokenPayload {
-  iat: number; // Issued at (Unix timestamp)
-  exp?: number; // Expiration (optional for master tokens)
-  sub: string; // Client ID
-  workspaceId: string; // Workshop ID
-  scope: typeof Scope.Type; // Permission scope
-  isMaster: boolean; // Master token flag
-}
+import { AuthorizationLive } from "../middleware/authorization";
+import { Jwt } from "../services/jwt";
 
 export const SyncAuthGroupLive = HttpApiBuilder.group(
   SyncApi,
   "syncAuth",
   (handlers) =>
     Effect.gen(function* () {
-      const secretKey = yield* Config.redacted("JWT_SECRET");
+      const jwt = yield* Jwt;
       const { query } = yield* Drizzle;
 
       return handlers
         .handle("generateToken", ({ payload }) =>
           Effect.gen(function* () {
-            const tokenPayload = {
-              iat: Math.floor(Date.now() / 1000), // Current timestamp in seconds
-              sub: payload.clientId,
-              workspaceId: payload.workspaceId,
-              scope: "read_write", // TODO
-              isMaster: true, // TODO
-            } satisfies TokenPayload;
-
-            yield* Effect.log(tokenPayload);
-
-            const token = jwt.sign(tokenPayload, Redacted.value(secretKey), {
-              algorithm: "HS256",
-            });
+            const scope: typeof Scope.Type = "read_write";
+            const isMaster = true;
+            const issuedAt = new Date();
 
             yield* query({
-              Request: Schema.Struct({
-                clientId: Schema.String,
-                workspaceId: Schema.String,
-                snapshot: Schema.Uint8ArrayFromSelf,
-              }),
-              execute: (db, { clientId, snapshot, workspaceId }) =>
-                db.insert(workspaceTable).values({
-                  snapshot,
-                  clientId,
-                  workspaceId,
-                  ownerClientId: clientId,
-                  snapshotId: payload.snapshotId,
-                }),
-            })({
+              Request: Schema.Struct({ workspaceId: Schema.String }),
+              execute: (db, { workspaceId }) =>
+                db
+                  .select()
+                  .from(workspaceTable)
+                  .where(eq(workspaceTable.workspaceId, workspaceId)),
+            })({ workspaceId: payload.workspaceId }).pipe(
+              Effect.flatMap((rows) =>
+                rows.length === 0
+                  ? Effect.void
+                  : Effect.fail({ message: "Workspace already exists" })
+              )
+            );
+
+            const token = jwt.sign({
               clientId: payload.clientId,
-              snapshot: payload.snapshot,
               workspaceId: payload.workspaceId,
             });
+
+            yield* Effect.all([
+              query({
+                Request: Schema.Struct({
+                  clientId: Schema.String,
+                  workspaceId: Schema.String,
+                  snapshot: Schema.Uint8ArrayFromSelf,
+                }),
+                execute: (db, { clientId, snapshot, workspaceId }) =>
+                  db.insert(workspaceTable).values({
+                    snapshot,
+                    clientId,
+                    workspaceId,
+                    ownerClientId: clientId,
+                    snapshotId: payload.snapshotId,
+                  }),
+              })({
+                clientId: payload.clientId,
+                snapshot: payload.snapshot,
+                workspaceId: payload.workspaceId,
+              }),
+              query({
+                Request: Schema.Struct({
+                  clientId: Schema.String,
+                  workspaceId: Schema.String,
+                  tokenValue: Schema.String,
+                }),
+                execute: (db, { clientId, tokenValue, workspaceId }) =>
+                  db.insert(tokenTable).values({
+                    clientId,
+                    scope,
+                    tokenValue,
+                    workspaceId,
+                    isMaster,
+                    issuedAt,
+                    expiresAt: null,
+                    revokedAt: null,
+                  }),
+              })({
+                clientId: payload.clientId,
+                tokenValue: token,
+                workspaceId: payload.workspaceId,
+              }),
+            ]);
 
             return {
               token,
               workspaceId: payload.workspaceId,
               snapshot: payload.snapshot,
-              createdAt: new Date(),
+              createdAt: issuedAt,
             };
           }).pipe(
             Effect.tapErrorCause(Effect.logError),
@@ -80,4 +107,4 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
           Effect.fail("Not implemented")
         );
     })
-).pipe(Layer.provide(Drizzle.Default));
+).pipe(Layer.provide([Drizzle.Default, AuthorizationLive, Jwt.Default]));

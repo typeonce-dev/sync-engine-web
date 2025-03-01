@@ -2,10 +2,30 @@ import {
   HttpApi,
   HttpApiEndpoint,
   HttpApiGroup,
+  HttpApiMiddleware,
   HttpApiSchema,
+  HttpApiSecurity,
 } from "@effect/platform";
-import { Schema } from "effect";
+import { Context, Schema } from "effect";
 import { Snapshot } from "./loro";
+
+export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
+  "Unauthorized",
+  {},
+  HttpApiSchema.annotations({ status: 401 })
+) {}
+
+export class MissingWorkspace extends Schema.TaggedError<MissingWorkspace>()(
+  "MissingWorkspace",
+  {},
+  HttpApiSchema.annotations({ status: 404 })
+) {}
+
+export class DatabaseError extends Schema.TaggedError<DatabaseError>()(
+  "DatabaseError",
+  {},
+  HttpApiSchema.annotations({ status: 500 })
+) {}
 
 export const ClientId = Schema.UUID;
 export const WorkspaceId = Schema.UUID;
@@ -40,12 +60,38 @@ export class TokenTable extends Schema.Class<TokenTable>("TokenTable")({
   revokedAt: Schema.NullOr(Schema.DateFromString),
 }) {}
 
+export class AuthWorkspace extends Context.Tag("AuthWorkspace")<
+  AuthWorkspace,
+  WorkspaceTable
+>() {}
+
+const authKey = "x-api-key";
+export const ApiKey = HttpApiSecurity.apiKey({
+  in: "header",
+  key: authKey,
+});
+
+const ApiKeyHeader = Schema.Struct({
+  [authKey]: Schema.String,
+});
+
+export class Authorization extends HttpApiMiddleware.Tag<Authorization>()(
+  "Authorization",
+  {
+    failure: Schema.Union(Unauthorized, MissingWorkspace, DatabaseError),
+    provides: AuthWorkspace,
+    security: {
+      apiKey: ApiKey,
+    },
+  }
+) {}
+
 export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
   .add(
     /**
      Allows a client to create a new workshop and upload its initial data to the server. The server marks the client as the owner and issues a master token for full control.
      */
-    HttpApiEndpoint.post("generateToken")`/workspaces`
+    HttpApiEndpoint.post("generateToken")`/`
       .setPayload(
         Schema.Struct({
           clientId: ClientId,
@@ -70,7 +116,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
      */
     HttpApiEndpoint.post(
       "issueToken"
-    )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/token`
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/token`
       .setPayload(
         Schema.Struct({
           clientId: ClientId,
@@ -79,11 +125,6 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
         })
       )
       .addError(Schema.String)
-      .setHeaders(
-        Schema.Struct({
-          Authorization: Schema.String,
-        })
-      )
       .addSuccess(
         Schema.Struct({
           token: Schema.String,
@@ -91,6 +132,8 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
           expiresAt: Schema.DateFromString,
         })
       )
+      .setHeaders(ApiKeyHeader)
+      .middleware(Authorization)
   )
   .add(
     /**
@@ -98,14 +141,11 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
      */
     HttpApiEndpoint.del(
       "revokeToken"
-    )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/token/${HttpApiSchema.param("clientId", Schema.UUID)}`
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/token/${HttpApiSchema.param("clientId", Schema.UUID)}`
       .addError(Schema.String)
-      .setHeaders(
-        Schema.Struct({
-          Authorization: Schema.String,
-        })
-      )
       .addSuccess(Schema.Boolean)
+      .setHeaders(ApiKeyHeader)
+      .middleware(Authorization)
   )
   .add(
     /**
@@ -113,13 +153,8 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
      */
     HttpApiEndpoint.get(
       "listTokens"
-    )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/tokens`
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/tokens`
       .addError(Schema.String)
-      .setHeaders(
-        Schema.Struct({
-          Authorization: Schema.String,
-        })
-      )
       .addSuccess(
         Schema.Array(
           TokenTable.pipe(
@@ -135,7 +170,10 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
           )
         )
       )
-  ) {}
+      .setHeaders(ApiKeyHeader)
+      .middleware(Authorization)
+  )
+  .prefix("/workspaces") {}
 
 export class SyncDataGroup extends HttpApiGroup.make("syncData")
   .add(
@@ -144,19 +182,13 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
      */
     HttpApiEndpoint.put(
       "push"
-    )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}/sync`
-      .setPayload(
-        WorkspaceTable.pipe(Schema.pick("clientId", "snapshot", "snapshotId"))
-      )
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/sync`
+      .setPayload(WorkspaceTable.pipe(Schema.pick("snapshot", "snapshotId")))
       .addError(Schema.String)
-      // .setHeaders(
-      //   Schema.Struct({
-      //     Authorization: Schema.String,
-      //   })
-      // )
       .addSuccess(
         WorkspaceTable.pipe(Schema.pick("workspaceId", "createdAt", "snapshot"))
       )
+      .setHeaders(ApiKeyHeader)
   )
   .add(
     /**
@@ -164,17 +196,20 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
      */
     HttpApiEndpoint.get(
       "pull"
-    )`/workspaces/${HttpApiSchema.param("workspaceId", Schema.UUID)}`
-      .addError(Schema.String)
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}`
       .setHeaders(
         Schema.Struct({
-          Authorization: Schema.String,
+          "x-api-key": Schema.String,
         })
       )
+      .addError(Schema.String)
       .addSuccess(
         WorkspaceTable.pipe(Schema.pick("workspaceId", "createdAt", "snapshot"))
       )
-  ) {}
+      .setHeaders(ApiKeyHeader)
+  )
+  .middleware(Authorization)
+  .prefix("/workspaces") {}
 
 export class SyncApi extends HttpApi.make("SyncApi")
   .add(SyncAuthGroup)

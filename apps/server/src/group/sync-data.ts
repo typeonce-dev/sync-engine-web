@@ -1,10 +1,10 @@
 import { HttpApiBuilder } from "@effect/platform";
-import { SyncApi } from "@local/sync";
+import { AuthWorkspace, SyncApi } from "@local/sync";
 import { SnapshotToLoroDoc } from "@local/sync/loro";
-import { and, desc, eq } from "drizzle-orm";
 import { Array, Effect, Layer, Schema } from "effect";
 import { workspaceTable } from "../db/schema";
 import { Drizzle } from "../drizzle";
+import { AuthorizationLive } from "../middleware/authorization";
 
 export const SyncDataGroupLive = HttpApiBuilder.group(
   SyncApi,
@@ -12,36 +12,16 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
   (handlers) =>
     Effect.gen(function* () {
       const { query } = yield* Drizzle;
+
       return handlers
         .handle(
           "push",
-          ({
-            payload: { clientId, snapshot, snapshotId },
-            path: { workspaceId },
-          }) =>
+          ({ payload: { snapshot, snapshotId }, path: { workspaceId } }) =>
             Effect.gen(function* () {
+              const workspace = yield* AuthWorkspace;
               const doc = yield* Schema.decode(SnapshotToLoroDoc)(snapshot);
 
               yield* Effect.log(`Pushing workspace ${workspaceId}`);
-
-              const workspace = yield* query({
-                Request: Schema.Struct({
-                  workspaceId: Schema.UUID,
-                  clientId: Schema.UUID,
-                }),
-                execute: (db, { workspaceId, clientId }) =>
-                  db
-                    .select()
-                    .from(workspaceTable)
-                    .where(
-                      and(
-                        eq(workspaceTable.workspaceId, workspaceId),
-                        eq(workspaceTable.clientId, clientId)
-                      )
-                    )
-                    .orderBy(desc(workspaceTable.createdAt))
-                    .limit(1),
-              })({ clientId, workspaceId }).pipe(Effect.flatMap(Array.head));
 
               doc.import(workspace.snapshot); // 🪄
 
@@ -78,4 +58,4 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
           Effect.fail("Not implemented")
         );
     })
-).pipe(Layer.provide(Drizzle.Default));
+).pipe(Layer.provide([Drizzle.Default, AuthorizationLive]));
