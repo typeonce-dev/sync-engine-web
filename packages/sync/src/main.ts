@@ -80,9 +80,16 @@ export class Authorization extends HttpApiMiddleware.Tag<Authorization>()(
   {
     failure: Schema.Union(Unauthorized, MissingWorkspace, DatabaseError),
     provides: AuthWorkspace,
-    security: {
-      apiKey: ApiKey,
-    },
+    security: { apiKey: ApiKey },
+  }
+) {}
+
+export class MasterAuthorization extends HttpApiMiddleware.Tag<MasterAuthorization>()(
+  "MasterAuthorization",
+  {
+    failure: Schema.Union(Unauthorized, MissingWorkspace, DatabaseError),
+    provides: AuthWorkspace,
+    security: { apiKey: ApiKey },
   }
 ) {}
 
@@ -133,7 +140,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
         })
       )
       .setHeaders(ApiKeyHeader)
-      .middleware(Authorization)
+      .middleware(MasterAuthorization)
   )
   .add(
     /**
@@ -145,7 +152,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
       .addError(Schema.String)
       .addSuccess(Schema.Boolean)
       .setHeaders(ApiKeyHeader)
-      .middleware(Authorization)
+      .middleware(MasterAuthorization)
   )
   .add(
     /**
@@ -171,7 +178,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
         )
       )
       .setHeaders(ApiKeyHeader)
-      .middleware(Authorization)
+      .middleware(MasterAuthorization)
   )
   .prefix("/workspaces") {}
 

@@ -12,9 +12,9 @@ import {
 import { SyncApi } from "@local/sync";
 import { Effect, Layer } from "effect";
 import { createServer } from "node:http";
-import { Drizzle } from "./drizzle";
 import { SyncAuthGroupLive } from "./group/sync-auth";
 import { SyncDataGroupLive } from "./group/sync-data";
+import { Drizzle } from "./services/drizzle";
 
 const EnvProviderLayer = Layer.unwrapEffect(
   PlatformConfigProvider.fromDotEnv(".env").pipe(

@@ -1,10 +1,11 @@
 import { HttpApiBuilder } from "@effect/platform";
-import { SyncApi, type Scope } from "@local/sync";
-import { eq } from "drizzle-orm";
+import { AuthWorkspace, SyncApi, type Scope } from "@local/sync";
+import { and, eq } from "drizzle-orm";
 import { Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
-import { Drizzle } from "../drizzle";
 import { AuthorizationLive } from "../middleware/authorization";
+import { MasterAuthorizationLive } from "../middleware/master-authorization";
+import { Drizzle } from "../services/drizzle";
 import { Jwt } from "../services/jwt";
 
 export const SyncAuthGroupLive = HttpApiBuilder.group(
@@ -18,6 +19,10 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
       return handlers
         .handle("generateToken", ({ payload }) =>
           Effect.gen(function* () {
+            yield* Effect.log(
+              `Generating token for workspace ${payload.workspaceId}`
+            );
+
             const scope: typeof Scope.Type = "read_write";
             const isMaster = true;
             const issuedAt = new Date();
@@ -37,7 +42,7 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
               )
             );
 
-            const token = jwt.sign({
+            const token = yield* jwt.sign({
               clientId: payload.clientId,
               workspaceId: payload.workspaceId,
             });
@@ -97,14 +102,52 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
             Effect.mapError((error) => error.message)
           )
         )
-        .handle("issueToken", ({ path: { workspaceId } }) =>
-          Effect.fail("Not implemented")
-        )
         .handle("listTokens", ({ path: { workspaceId } }) =>
+          Effect.gen(function* () {
+            const workspace = yield* AuthWorkspace;
+            const tokens = yield* query({
+              Request: Schema.Struct({
+                workspaceId: Schema.String,
+                clientId: Schema.String,
+              }),
+              execute: (db, { workspaceId, clientId }) =>
+                db
+                  .select()
+                  .from(tokenTable)
+                  .where(
+                    and(
+                      eq(tokenTable.workspaceId, workspaceId),
+                      eq(tokenTable.clientId, clientId)
+                    )
+                  ),
+            })({ workspaceId, clientId: workspace.clientId });
+
+            return tokens.map((token) => ({
+              clientId: token.clientId,
+              tokenValue: token.tokenValue,
+              scope: token.scope,
+              isMaster: token.isMaster,
+              issuedAt: token.issuedAt,
+              expiresAt: token.expiresAt,
+              revokedAt: token.revokedAt,
+            }));
+          }).pipe(
+            Effect.tapErrorCause(Effect.logError),
+            Effect.mapError((error) => error.message)
+          )
+        )
+        .handle("issueToken", ({ path: { workspaceId } }) =>
           Effect.fail("Not implemented")
         )
         .handle("revokeToken", ({ path: { workspaceId } }) =>
           Effect.fail("Not implemented")
         );
     })
-).pipe(Layer.provide([Drizzle.Default, AuthorizationLive, Jwt.Default]));
+).pipe(
+  Layer.provide([
+    Drizzle.Default,
+    AuthorizationLive,
+    MasterAuthorizationLive,
+    Jwt.Default,
+  ])
+);

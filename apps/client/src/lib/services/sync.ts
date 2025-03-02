@@ -31,6 +31,7 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
       }) =>
         Effect.gen(function* () {
           const clientId = yield* initClient;
+          yield* Effect.log(`Pushing snapshot ${snapshotId}`);
 
           const response = yield* Effect.fromNullable(workspace.token).pipe(
             Effect.flatMap((token) =>

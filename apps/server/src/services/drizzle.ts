@@ -1,5 +1,5 @@
 import { Data, Effect, Redacted, Schema } from "effect";
-import { DatabaseUrl } from "./database";
+import { DatabaseUrl } from "../database";
 
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
@@ -24,7 +24,7 @@ export class Drizzle extends Effect.Service<Drizzle>()("Drizzle", {
           try: () =>
             migrate(db, {
               migrationsFolder: fileURLToPath(
-                new URL("../drizzle", import.meta.url)
+                new URL("../../drizzle", import.meta.url)
               ),
             }),
           catch: (error) => new MigrationError({ cause: error }),

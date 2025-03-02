@@ -3,8 +3,8 @@ import { AuthWorkspace, SyncApi } from "@local/sync";
 import { SnapshotToLoroDoc } from "@local/sync/loro";
 import { Array, Effect, Layer, Schema } from "effect";
 import { workspaceTable } from "../db/schema";
-import { Drizzle } from "../drizzle";
 import { AuthorizationLive } from "../middleware/authorization";
+import { Drizzle } from "../services/drizzle";
 
 export const SyncDataGroupLive = HttpApiBuilder.group(
   SyncApi,

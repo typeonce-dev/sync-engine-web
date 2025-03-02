@@ -1,16 +1,16 @@
 import { Worker } from "@effect/platform";
 import { BrowserWorker } from "@effect/platform-browser";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { startTransition, useEffect } from "react";
-import { useActivity } from "../lib/hooks/use-activity";
-import { RuntimeClient } from "../lib/runtime-client";
-import { LoroStorage } from "../lib/services/loro-storage";
-import { WorkspaceManager } from "../lib/services/workspace-manager";
-import { useActionEffect } from "../lib/use-action-effect";
-import { Bootstrap, LiveQuery } from "../workers/schema";
+import { useActivity } from "../../lib/hooks/use-activity";
+import { RuntimeClient } from "../../lib/runtime-client";
+import { LoroStorage } from "../../lib/services/loro-storage";
+import { WorkspaceManager } from "../../lib/services/workspace-manager";
+import { useActionEffect } from "../../lib/use-action-effect";
+import { Bootstrap, LiveQuery } from "../../workers/schema";
 
-export const Route = createFileRoute("/$workspaceId")({
+export const Route = createFileRoute("/$workspaceId/")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
     RuntimeClient.runPromise(
@@ -89,6 +89,13 @@ function RouteComponent() {
 
   return (
     <div>
+      <Link
+        to="/$workspaceId/token"
+        params={{ workspaceId: workspace.workspaceId }}
+      >
+        Tokens
+      </Link>
+
       <p>{workspace.workspaceId}</p>
       <button
         onClick={() =>

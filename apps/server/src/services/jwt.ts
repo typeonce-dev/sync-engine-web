@@ -26,16 +26,24 @@ export class Jwt extends Effect.Service<Jwt>()("Jwt", {
         clientId: string;
         workspaceId: string;
       }) =>
-        jwt.sign(
+        Schema.encode(TokenPayload)(
           new TokenPayload({
             iat: Math.floor(Date.now() / 1000),
             sub: clientId,
             workspaceId,
             scope: "read_write",
             isMaster: true,
-          }),
-          Redacted.value(secretKey),
-          { algorithm: "HS256" }
+          })
+        ).pipe(
+          Effect.flatMap((payload) =>
+            Effect.try({
+              try: () =>
+                jwt.sign(payload, Redacted.value(secretKey), {
+                  algorithm: "HS256",
+                }),
+              catch: () => new JwtError({ reason: "invalid" }),
+            })
+          )
         ),
 
       decode: ({ apiKey }: { apiKey: Redacted.Redacted<string> }) =>
