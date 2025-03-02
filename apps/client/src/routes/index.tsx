@@ -15,10 +15,8 @@ function HomeComponent() {
 
   const [, joinWorkspace] = useActionEffect((formData: FormData | undefined) =>
     Effect.gen(function* () {
-      const workspaceId = formData?.get("workspaceId") as string | null;
-      const workspace = yield* WorkspaceManager.createOrJoin(
-        workspaceId ?? undefined
-      );
+      const workspaceId = formData?.get("workspaceId") as string;
+      const workspace = yield* WorkspaceManager.create(workspaceId);
       yield* Effect.sync(() =>
         navigate({
           to: `/$workspaceId`,

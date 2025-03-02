@@ -1,7 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform";
-import { AuthWorkspace, SyncApi, type Scope } from "@local/sync";
-import { and, eq } from "drizzle-orm";
-import { Effect, Layer, Schema } from "effect";
+import { AuthWorkspace, Scope, SyncApi } from "@local/sync";
+import { and, eq, not } from "drizzle-orm";
+import { DateTime, Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
 import { AuthorizationLive } from "../middleware/authorization";
 import { MasterAuthorizationLive } from "../middleware/master-authorization";
@@ -117,7 +117,7 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
                   .where(
                     and(
                       eq(tokenTable.workspaceId, workspaceId),
-                      eq(tokenTable.clientId, clientId)
+                      not(eq(tokenTable.clientId, clientId))
                     )
                   ),
             })({ workspaceId, clientId: workspace.clientId });
@@ -136,8 +136,68 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
             Effect.mapError((error) => error.message)
           )
         )
-        .handle("issueToken", ({ path: { workspaceId } }) =>
-          Effect.fail("Not implemented")
+        .handle("issueToken", ({ path: { workspaceId }, payload }) =>
+          Effect.gen(function* () {
+            yield* Effect.log(`Issuing token for workspace ${workspaceId}`);
+
+            const issuedAt = yield* DateTime.now;
+            const expiresAt = issuedAt.pipe(
+              DateTime.addDuration(payload.expiresIn),
+              DateTime.toDate
+            );
+            const token = yield* jwt.sign({
+              clientId: payload.clientId,
+              workspaceId,
+            });
+
+            yield* query({
+              Request: Schema.Struct({
+                clientId: Schema.String,
+                workspaceId: Schema.String,
+                tokenValue: Schema.String,
+                scope: Scope,
+                expiresAt: Schema.DateFromSelf,
+                issuedAt: Schema.DateFromSelf,
+              }),
+              execute: (
+                db,
+                {
+                  clientId,
+                  tokenValue,
+                  workspaceId,
+                  scope,
+                  expiresAt,
+                  issuedAt,
+                }
+              ) =>
+                db.insert(tokenTable).values({
+                  clientId,
+                  scope,
+                  tokenValue,
+                  workspaceId,
+                  issuedAt,
+                  expiresAt,
+                  isMaster: false,
+                  revokedAt: null,
+                }),
+            })({
+              expiresAt,
+              workspaceId,
+              tokenValue: token,
+              scope: payload.scope,
+              clientId: payload.clientId,
+              issuedAt: DateTime.toDate(issuedAt),
+            });
+
+            return {
+              token,
+              expiresAt,
+              scope: payload.scope,
+            };
+          }).pipe(
+            Effect.tapErrorCause(Effect.logError),
+            Effect.mapError((error) => error.message)
+          )
         )
         .handle("revokeToken", ({ path: { workspaceId } }) =>
           Effect.fail("Not implemented")

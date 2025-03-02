@@ -10,7 +10,7 @@ import { WorkerMessage } from "./schema";
 const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
   Bootstrap: (params) =>
     Effect.gen(function* () {
-      const { push } = yield* Sync;
+      const { push, pull } = yield* Sync;
 
       const manager = yield* WorkspaceManager;
       const temp = yield* TempWorkspace;
@@ -31,9 +31,10 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
           snapshot: tempUpdates.snapshot,
           snapshotId: tempUpdates.snapshotId,
         });
-        yield* Effect.log("Sync completed");
+        yield* Effect.log("Push sync completed");
       } else {
-        yield* Effect.log("No sync updates");
+        yield* pull({ workspaceId: workspace.workspaceId });
+        yield* Effect.log("Pull sync completed");
       }
 
       return true;

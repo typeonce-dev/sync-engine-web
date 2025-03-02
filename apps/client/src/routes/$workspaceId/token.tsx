@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Effect } from "effect";
+import { Duration, Effect } from "effect";
 import { ApiClient } from "../../lib/api-client";
+import { WEBSITE_URL } from "../../lib/constants";
 import { RuntimeClient } from "../../lib/runtime-client";
 import { WorkspaceManager } from "../../lib/services/workspace-manager";
+import { useActionEffect } from "../../lib/use-action-effect";
 
 export const Route = createFileRoute("/$workspaceId/token")({
   component: RouteComponent,
@@ -14,16 +16,38 @@ export const Route = createFileRoute("/$workspaceId/token")({
           Effect.flatMap((workspace) => Effect.fromNullable(workspace?.token))
         );
 
-        return yield* api.client.syncAuth.listTokens({
+        const tokens = yield* api.client.syncAuth.listTokens({
           path: { workspaceId },
           headers: { "x-api-key": token },
         });
+
+        return { tokens, token };
       })
     ),
 });
 
 function RouteComponent() {
-  const tokens = Route.useLoaderData();
+  const { workspaceId } = Route.useParams();
+  const { tokens, token } = Route.useLoaderData();
+
+  const [, onIssueToken, issuing] = useActionEffect((formData: FormData) =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+
+      const clientId = formData.get("clientId") as string;
+
+      yield* api.client.syncAuth.issueToken({
+        path: { workspaceId },
+        headers: { "x-api-key": token },
+        payload: {
+          clientId,
+          expiresIn: Duration.days(30),
+          scope: "read_write",
+        },
+      });
+    })
+  );
+
   return (
     <div>
       <h1>Tokens</h1>
@@ -35,8 +59,9 @@ function RouteComponent() {
             <th>isMaster</th>
             <th>scope</th>
             <th>issuedAt</th>
-            <th>expired</th>
-            <th>revoked</th>
+            <th>expiresAt</th>
+            <th>revokedAt</th>
+            <th>Share</th>
           </tr>
         </thead>
         <tbody>
@@ -71,10 +96,29 @@ function RouteComponent() {
                     })
                   : "N/A"}
               </td>
+              <td>
+                <button
+                  type="button"
+                  onClick={() =>
+                    navigator.clipboard.writeText(
+                      `${WEBSITE_URL}/${workspaceId}/join`
+                    )
+                  }
+                >
+                  Share
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      <form action={onIssueToken}>
+        <input type="text" name="clientId" />
+        <button type="submit" disabled={issuing}>
+          Issue token
+        </button>
+      </form>
     </div>
   );
 }

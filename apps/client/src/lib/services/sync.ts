@@ -48,7 +48,7 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
                   }))
                 )
             ),
-            Effect.orElse(() =>
+            Effect.catchTag("NoSuchElementException", () =>
               client.syncAuth
                 .generateToken({
                   payload: {
@@ -82,6 +82,25 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
               workspaceId: workspace.workspaceId,
             }),
           ]);
+        }),
+
+      pull: ({ workspaceId }: { workspaceId: string }) =>
+        Effect.gen(function* () {
+          const clientId = yield* initClient;
+          yield* Effect.log(`Pulling from ${workspaceId}`);
+
+          const response = yield* client.syncData.pull({
+            path: { workspaceId, clientId },
+          });
+
+          const doc = new LoroDoc();
+          doc.import(response.snapshot);
+          yield* manager.put({
+            workspaceId: response.workspaceId,
+            snapshot: response.snapshot,
+            token: response.token,
+            version: doc.version().encode(),
+          });
         }),
     };
   }),

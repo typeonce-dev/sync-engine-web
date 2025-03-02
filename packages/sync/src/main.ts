@@ -196,6 +196,7 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
         WorkspaceTable.pipe(Schema.pick("workspaceId", "createdAt", "snapshot"))
       )
       .setHeaders(ApiKeyHeader)
+      .middleware(Authorization)
   )
   .add(
     /**
@@ -203,19 +204,16 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
      */
     HttpApiEndpoint.get(
       "pull"
-    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}`
-      .setHeaders(
-        Schema.Struct({
-          "x-api-key": Schema.String,
-        })
-      )
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/${HttpApiSchema.param("clientId", Schema.UUID)}`
       .addError(Schema.String)
       .addSuccess(
-        WorkspaceTable.pipe(Schema.pick("workspaceId", "createdAt", "snapshot"))
+        Schema.Struct({
+          workspaceId: WorkspaceTable.fields.workspaceId,
+          snapshot: WorkspaceTable.fields.snapshot,
+          token: TokenTable.fields.tokenValue,
+        })
       )
-      .setHeaders(ApiKeyHeader)
   )
-  .middleware(Authorization)
   .prefix("/workspaces") {}
 
 export class SyncApi extends HttpApi.make("SyncApi")

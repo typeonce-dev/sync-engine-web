@@ -43,7 +43,7 @@ export class WorkspaceManager extends Effect.Service<WorkspaceManager>()(
             )
           ),
 
-        createOrJoin: (workspaceId: string | undefined) =>
+        create: (workspaceId: string) =>
           query((_) =>
             _.workspace.toCollection().modify({ current: false })
           ).pipe(
@@ -60,7 +60,7 @@ export class WorkspaceManager extends Effect.Service<WorkspaceManager>()(
                   snapshot,
                   token: null,
                   version: null,
-                  workspaceId: workspaceId ?? crypto.randomUUID(),
+                  workspaceId,
                 })
               )
             ),

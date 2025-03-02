@@ -1,12 +1,14 @@
 import {
   Authorization,
+  ClientId,
   DatabaseError,
   MissingWorkspace,
   Unauthorized,
+  WorkspaceId,
 } from "@local/sync";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { Array, Effect, Layer, Match, Redacted, Schema } from "effect";
-import { workspaceTable } from "../db/schema";
+import { tokenTable, workspaceTable } from "../db/schema";
 import { Drizzle } from "../services/drizzle";
 import { Jwt } from "../services/jwt";
 
@@ -25,32 +27,56 @@ export const AuthorizationLive = Layer.effect(
 
           yield* Effect.log(`Valid auth ${tokenPayload.workspaceId}`);
 
-          return yield* query({
+          yield* query({
             Request: Schema.Struct({
-              workspaceId: Schema.UUID,
-              clientId: Schema.UUID,
+              workspaceId: WorkspaceId,
+              clientId: ClientId,
             }),
             execute: (db, { workspaceId, clientId }) =>
               db
                 .select()
-                .from(workspaceTable)
+                .from(tokenTable)
                 .where(
                   and(
-                    eq(workspaceTable.workspaceId, workspaceId),
-                    eq(workspaceTable.clientId, clientId)
+                    eq(tokenTable.workspaceId, workspaceId),
+                    eq(tokenTable.clientId, clientId),
+                    or(
+                      isNull(tokenTable.expiresAt),
+                      gt(tokenTable.expiresAt, new Date())
+                    )
                   )
                 )
-                .orderBy(desc(workspaceTable.createdAt))
+                .orderBy(desc(tokenTable.issuedAt))
                 .limit(1),
           })({
-            clientId: tokenPayload.sub,
             workspaceId: tokenPayload.workspaceId,
-          }).pipe(Effect.flatMap(Array.head));
+            clientId: tokenPayload.sub,
+          }).pipe(
+            Effect.flatMap(Array.head),
+            Effect.tapError(Effect.logError),
+            Effect.mapError(() => new Unauthorized())
+          );
+
+          return yield* query({
+            Request: Schema.Struct({
+              workspaceId: Schema.UUID,
+            }),
+            execute: (db, { workspaceId }) =>
+              db
+                .select()
+                .from(workspaceTable)
+                .where(eq(workspaceTable.workspaceId, workspaceId))
+                .orderBy(desc(workspaceTable.createdAt))
+                .limit(1),
+          })({ workspaceId: tokenPayload.workspaceId }).pipe(
+            Effect.flatMap(Array.head)
+          );
         }).pipe(
           Effect.mapError((error) =>
             Match.value(error).pipe(
               Match.tagsExhaustive({
                 NoSuchElementException: () => new MissingWorkspace(),
+                Unauthorized: () => new Unauthorized(),
                 JwtError: () => new Unauthorized(),
                 ParseError: () => new Unauthorized(),
                 QueryError: () => new DatabaseError(),
