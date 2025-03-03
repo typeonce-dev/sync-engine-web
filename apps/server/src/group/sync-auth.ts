@@ -199,8 +199,34 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
             Effect.mapError((error) => error.message)
           )
         )
-        .handle("revokeToken", ({ path: { workspaceId } }) =>
-          Effect.fail("Not implemented")
+        .handle("revokeToken", ({ path: { workspaceId, clientId } }) =>
+          Effect.gen(function* () {
+            yield* Effect.log(`Revoking token for workspace ${workspaceId}`);
+
+            const revokedAt = yield* DateTime.now;
+
+            yield* query({
+              Request: Schema.Struct({
+                workspaceId: Schema.String,
+                clientId: Schema.String,
+              }),
+              execute: (db, { workspaceId, clientId }) =>
+                db
+                  .update(tokenTable)
+                  .set({ revokedAt: DateTime.toDate(revokedAt) })
+                  .where(
+                    and(
+                      eq(tokenTable.workspaceId, workspaceId),
+                      eq(tokenTable.clientId, clientId)
+                    )
+                  ),
+            })({ workspaceId, clientId });
+
+            return true;
+          }).pipe(
+            Effect.tapErrorCause(Effect.logError),
+            Effect.mapError((error) => error.message)
+          )
         );
     })
 ).pipe(

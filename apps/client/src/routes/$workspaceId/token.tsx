@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { Duration, Effect } from "effect";
 import { ApiClient } from "../../lib/api-client";
 import { WEBSITE_URL } from "../../lib/constants";
@@ -29,6 +29,7 @@ export const Route = createFileRoute("/$workspaceId/token")({
 function RouteComponent() {
   const { workspaceId } = Route.useParams();
   const { tokens, token } = Route.useLoaderData();
+  const router = useRouter();
 
   const [, onIssueToken, issuing] = useActionEffect((formData: FormData) =>
     Effect.gen(function* () {
@@ -45,6 +46,21 @@ function RouteComponent() {
           scope: "read_write",
         },
       });
+    })
+  );
+
+  const [, onRevoke, revoking] = useActionEffect((formData: FormData) =>
+    Effect.gen(function* () {
+      const api = yield* ApiClient;
+
+      const clientId = formData.get("clientId") as string;
+
+      yield* api.client.syncAuth.revokeToken({
+        path: { workspaceId, clientId },
+        headers: { "x-api-key": token },
+      });
+
+      yield* Effect.promise(() => router.invalidate({ sync: true }));
     })
   );
 
@@ -88,13 +104,26 @@ function RouteComponent() {
                   : "N/A"}
               </td>
               <td>
-                {token.revokedAt
-                  ? new Date(token.revokedAt).toLocaleDateString(undefined, {
+                {token.revokedAt ? (
+                  <span>
+                    {new Date(token.revokedAt).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "long",
                       day: "numeric",
-                    })
-                  : "N/A"}
+                    })}
+                  </span>
+                ) : (
+                  <form action={onRevoke}>
+                    <input
+                      type="hidden"
+                      name="clientId"
+                      value={token.clientId}
+                    />
+                    <button type="submit" disabled={revoking}>
+                      Revoke access
+                    </button>
+                  </form>
+                )}
               </td>
               <td>
                 <button
