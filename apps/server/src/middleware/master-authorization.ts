@@ -47,15 +47,16 @@ export const MasterAuthorizationLive = Layer.effect(
             }).pipe(Effect.flatMap(Array.head));
           }
 
-          return yield* new Unauthorized();
+          return yield* new Unauthorized({ message: "Not master access" });
         }).pipe(
           Effect.mapError((error) =>
             Match.value(error).pipe(
               Match.tagsExhaustive({
                 NoSuchElementException: () => new MissingWorkspace(),
-                Unauthorized: () => new Unauthorized(),
-                JwtError: () => new Unauthorized(),
-                ParseError: () => new Unauthorized(),
+                Unauthorized: (error) => error,
+                JwtError: () => new Unauthorized({ message: "Invalid token" }),
+                ParseError: () =>
+                  new Unauthorized({ message: "Invalid parameters" }),
                 QueryError: () => new DatabaseError(),
               })
             )

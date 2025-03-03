@@ -1,7 +1,7 @@
 import { HttpApiBuilder } from "@effect/platform";
 import { AuthWorkspace, SyncApi } from "@local/sync";
 import { SnapshotToLoroDoc } from "@local/sync/loro";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { Array, Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
 import { AuthorizationLive } from "../middleware/authorization";
@@ -24,8 +24,7 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
 
               yield* Effect.log(`Pushing workspace ${workspaceId}`);
 
-              doc.import(workspace.snapshot); // 🪄
-
+              doc.import(workspace.snapshot);
               const newSnapshot = yield* Schema.encode(SnapshotToLoroDoc)(doc);
 
               const newWorkspace = yield* query({
@@ -69,7 +68,15 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
                   .where(
                     and(
                       eq(tokenTable.workspaceId, workspaceId),
-                      eq(tokenTable.clientId, clientId)
+                      eq(tokenTable.clientId, clientId),
+                      or(
+                        isNull(tokenTable.revokedAt),
+                        gt(tokenTable.revokedAt, new Date())
+                      ),
+                      or(
+                        isNull(tokenTable.expiresAt),
+                        gt(tokenTable.expiresAt, new Date())
+                      )
                     )
                   )
                   .orderBy(desc(tokenTable.issuedAt))

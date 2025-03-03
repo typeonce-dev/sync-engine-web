@@ -41,6 +41,10 @@ export const AuthorizationLive = Layer.effect(
                     eq(tokenTable.workspaceId, workspaceId),
                     eq(tokenTable.clientId, clientId),
                     or(
+                      isNull(tokenTable.revokedAt),
+                      gt(tokenTable.revokedAt, new Date())
+                    ),
+                    or(
                       isNull(tokenTable.expiresAt),
                       gt(tokenTable.expiresAt, new Date())
                     )
@@ -54,7 +58,12 @@ export const AuthorizationLive = Layer.effect(
           }).pipe(
             Effect.flatMap(Array.head),
             Effect.tapError(Effect.logError),
-            Effect.mapError(() => new Unauthorized())
+            Effect.mapError(
+              () =>
+                new Unauthorized({
+                  message: "Missing, expired, or revoked token",
+                })
+            )
           );
 
           return yield* query({
@@ -76,9 +85,10 @@ export const AuthorizationLive = Layer.effect(
             Match.value(error).pipe(
               Match.tagsExhaustive({
                 NoSuchElementException: () => new MissingWorkspace(),
-                Unauthorized: () => new Unauthorized(),
-                JwtError: () => new Unauthorized(),
-                ParseError: () => new Unauthorized(),
+                Unauthorized: (error) => error,
+                JwtError: () => new Unauthorized({ message: "Invalid token" }),
+                ParseError: () =>
+                  new Unauthorized({ message: "Invalid parameters" }),
                 QueryError: () => new DatabaseError(),
               })
             )

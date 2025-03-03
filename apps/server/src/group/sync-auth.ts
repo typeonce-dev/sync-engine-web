@@ -25,7 +25,7 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
 
             const scope: typeof Scope.Type = "read_write";
             const isMaster = true;
-            const issuedAt = new Date();
+            const issuedAt = DateTime.toDate(yield* DateTime.now);
 
             yield* query({
               Request: Schema.Struct({ workspaceId: Schema.String }),

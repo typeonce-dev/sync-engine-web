@@ -46,6 +46,8 @@ function RouteComponent() {
           scope: "read_write",
         },
       });
+
+      yield* Effect.promise(() => router.invalidate({ sync: true }));
     })
   );
 

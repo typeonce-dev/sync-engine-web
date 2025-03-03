@@ -11,7 +11,7 @@ import { Snapshot } from "./loro";
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",
-  {},
+  { message: Schema.String },
   HttpApiSchema.annotations({ status: 401 })
 ) {}
 
