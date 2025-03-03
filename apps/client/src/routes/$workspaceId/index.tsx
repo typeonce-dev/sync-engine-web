@@ -10,12 +10,30 @@ import { WorkspaceManager } from "../../lib/services/workspace-manager";
 import { useActionEffect } from "../../lib/use-action-effect";
 import { Bootstrap, LiveQuery } from "../../workers/schema";
 
+const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
+  Effect.gen(function* () {
+    const pool = yield* Worker.makePoolSerialized({ size: 1 });
+    return yield* pool.broadcast(new Bootstrap({ workspaceId }));
+  }).pipe(
+    Effect.scoped,
+    Effect.provide(
+      BrowserWorker.layer(
+        () =>
+          new globalThis.Worker(
+            new URL("./src/workers/sync.ts", globalThis.origin),
+            { type: "module" }
+          )
+      )
+    )
+  );
+
 export const Route = createFileRoute("/$workspaceId/")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
     RuntimeClient.runPromise(
       WorkspaceManager.getById({ workspaceId }).pipe(
-        Effect.flatMap(Effect.fromNullable)
+        Effect.flatMap(Effect.fromNullable),
+        Effect.tap(({ workspaceId }) => bootstrap({ workspaceId }))
       )
     ),
 });
@@ -27,25 +45,7 @@ function RouteComponent() {
     workspaceId: workspace.workspaceId,
   });
 
-  const [, bootstrap] = useActionEffect(
-    ({ workspaceId }: { workspaceId: string }) =>
-      Effect.gen(function* () {
-        const pool = yield* Worker.makePoolSerialized({ size: 1 });
-        return yield* pool.broadcast(new Bootstrap({ workspaceId }));
-      }).pipe(
-        Effect.scoped,
-        Effect.provide(
-          BrowserWorker.layer(
-            () =>
-              new globalThis.Worker(
-                new URL("./src/workers/sync.ts", globalThis.origin),
-                { type: "module" }
-              )
-          )
-        )
-      )
-  );
-
+  const [, onBootstrap, bootstrapping] = useActionEffect(bootstrap);
   const [, onAdd] = useActionEffect((formData: FormData) =>
     Effect.gen(function* () {
       const loroStorage = yield* LoroStorage;
@@ -98,13 +98,14 @@ function RouteComponent() {
 
       <p>{workspace.workspaceId}</p>
       <button
+        disabled={bootstrapping}
         onClick={() =>
           startTransition(() =>
-            bootstrap({ workspaceId: workspace.workspaceId })
+            onBootstrap({ workspaceId: workspace.workspaceId })
           )
         }
       >
-        Bootstrap
+        {bootstrapping ? "Bootstrapping..." : "Bootstrap"}
       </button>
 
       <form action={onAdd}>
