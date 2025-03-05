@@ -1,5 +1,4 @@
-import { ClientId, SnapshotId, WorkspaceId } from "@local/sync";
-import { Snapshot } from "@local/sync/loro";
+import { ClientId, Snapshot, SnapshotId, WorkspaceId } from "@local/sync";
 import { Schema } from "effect";
 
 export class ClientTable extends Schema.Class<ClientTable>("ClientTable")({

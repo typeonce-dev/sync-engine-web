@@ -7,7 +7,6 @@ import {
   HttpApiSecurity,
 } from "@effect/platform";
 import { Context, Schema } from "effect";
-import { Snapshot } from "./loro";
 
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
   "Unauthorized",
@@ -29,6 +28,8 @@ export class DatabaseError extends Schema.TaggedError<DatabaseError>()(
 
 export const ClientId = Schema.UUID;
 export const WorkspaceId = Schema.UUID;
+
+export const Snapshot = Schema.Uint8Array;
 export const SnapshotId = Schema.UUID;
 export const Scope = Schema.Literal("read", "read_write");
 
@@ -189,7 +190,7 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
      */
     HttpApiEndpoint.put(
       "push"
-    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/sync`
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/push`
       .setPayload(WorkspaceTable.pipe(Schema.pick("snapshot", "snapshotId")))
       .addError(Schema.String)
       .addSuccess(
@@ -204,11 +205,22 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
      */
     HttpApiEndpoint.get(
       "pull"
-    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/${HttpApiSchema.param("clientId", Schema.UUID)}`
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/pull`
+      .addError(Schema.String)
+      .addSuccess(Schema.Struct({ snapshot: WorkspaceTable.fields.snapshot }))
+      .setHeaders(ApiKeyHeader)
+      .middleware(Authorization)
+  )
+  .add(
+    /**
+     Client opens link to join another workspace. The server issues a token for the workspace and returns the workspace data.
+     */
+    HttpApiEndpoint.get(
+      "join"
+    )`/${HttpApiSchema.param("workspaceId", Schema.UUID)}/join/${HttpApiSchema.param("clientId", Schema.UUID)}`
       .addError(Schema.String)
       .addSuccess(
         Schema.Struct({
-          workspaceId: WorkspaceTable.fields.workspaceId,
           snapshot: WorkspaceTable.fields.snapshot,
           token: TokenTable.fields.tokenValue,
         })

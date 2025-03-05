@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Duration, Effect } from "effect";
 import { ApiClient } from "../../lib/api-client";
 import { WEBSITE_URL } from "../../lib/constants";
@@ -68,6 +68,9 @@ function RouteComponent() {
 
   return (
     <div>
+      <Link to={`/$workspaceId`} params={{ workspaceId }}>
+        Back
+      </Link>
       <h1>Tokens</h1>
       <table>
         <thead>

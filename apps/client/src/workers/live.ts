@@ -1,6 +1,6 @@
 import { WorkerRunner } from "@effect/platform";
 import { BrowserWorkerRunner } from "@effect/platform-browser";
-import { Snapshot } from "@local/sync/loro";
+import { Snapshot } from "@local/sync";
 import { liveQuery } from "dexie";
 import {
   Array,
@@ -72,9 +72,9 @@ const main = (params: { workspaceId: string }) =>
                           );
 
                           yield* push({
-                            workspace,
                             snapshot,
                             snapshotId: message.snapshotId,
+                            workspaceId: workspace.workspaceId,
                           });
                         }
                       })

@@ -1,5 +1,5 @@
 {
-  "name": "@local/sync",
+  "name": "@local/schema",
   "type": "module",
   "scripts": {
     "typecheck": "tsc"
@@ -8,9 +8,10 @@
     ".": "./src/main.ts"
   },
   "devDependencies": {},
-  "peerDependencies": {},
+  "peerDependencies": {
+    "loro-crdt": "^1.4.2"
+  },
   "dependencies": {
-    "@effect/platform": "^0.77.2",
     "effect": "^3.13.2"
   }
 }

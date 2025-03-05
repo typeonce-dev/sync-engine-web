@@ -1,5 +1,5 @@
-import { type LoroSchema } from "@local/sync/loro";
-import { Effect } from "effect";
+import { SnapshotSchema, type LoroSchema } from "@local/schema";
+import { Effect, Schema } from "effect";
 import { LoroDoc } from "loro-crdt";
 import { TempWorkspace } from "../services/temp-workspace";
 import { WorkspaceManager } from "../services/workspace-manager";
@@ -21,5 +21,6 @@ export const hookQuery = ({ workspaceId }: { workspaceId: string }) =>
       doc.import(tempWorkspace.snapshot);
     }
 
-    return doc.getList("activity").toJSON();
+    const json = doc.toJSON() as unknown;
+    return yield* Schema.decodeUnknown(SnapshotSchema)(json);
   });

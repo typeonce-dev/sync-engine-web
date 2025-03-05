@@ -1,4 +1,4 @@
-import { Activity, type LoroSchema } from "@local/sync/loro";
+import { Activity, type LoroSchema } from "@local/schema";
 import { Effect, Schema } from "effect";
 import { LoroDoc, LoroMap, VersionVector } from "loro-crdt";
 import { TempWorkspace } from "./temp-workspace";

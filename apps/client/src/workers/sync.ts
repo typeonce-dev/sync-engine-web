@@ -27,7 +27,7 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
 
       if (tempUpdates !== undefined) {
         yield* push({
-          workspace,
+          workspaceId: workspace.workspaceId,
           snapshot: tempUpdates.snapshot,
           snapshotId: tempUpdates.snapshotId,
         });

@@ -1,6 +1,6 @@
 import { HttpApiBuilder } from "@effect/platform";
+import { SnapshotToLoroDoc } from "@local/schema";
 import { AuthWorkspace, SyncApi } from "@local/sync";
-import { SnapshotToLoroDoc } from "@local/sync/loro";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
 import { Array, Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
@@ -54,7 +54,29 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
               Effect.mapError((error) => error.message)
             )
         )
-        .handle("pull", ({ path: { workspaceId, clientId } }) =>
+        .handle("pull", ({ path: { workspaceId } }) =>
+          Effect.gen(function* () {
+            const workspace = yield* query({
+              Request: Schema.Struct({ workspaceId: Schema.String }),
+              execute: (db, { workspaceId }) =>
+                db
+                  .select()
+                  .from(workspaceTable)
+                  .where(eq(workspaceTable.workspaceId, workspaceId))
+                  .orderBy(desc(workspaceTable.createdAt))
+                  .limit(1),
+            })({ workspaceId }).pipe(
+              Effect.flatMap(Array.head),
+              Effect.mapError(() => ({ message: "Missing workspace" }))
+            );
+
+            return { snapshot: workspace.snapshot };
+          }).pipe(
+            Effect.tapErrorCause(Effect.logError),
+            Effect.mapError((error) => error.message)
+          )
+        )
+        .handle("join", ({ path: { workspaceId, clientId } }) =>
           Effect.gen(function* () {
             const { tokenValue } = yield* query({
               Request: Schema.Struct({
@@ -103,7 +125,6 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
             return {
               token: tokenValue,
               snapshot: workspace.snapshot,
-              workspaceId: workspace.workspaceId,
             };
           }).pipe(
             Effect.tapErrorCause(Effect.logError),
