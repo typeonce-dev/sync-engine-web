@@ -1,3 +1,4 @@
+import type { LoroSchema } from "@local/schema";
 import { Effect, flow, Option } from "effect";
 import { LoroDoc } from "loro-crdt";
 import { ApiClient } from "../api-client";
@@ -77,7 +78,7 @@ export class Sync extends Effect.Service<Sync>()("Sync", {
                       )
                     );
 
-                    const doc = new LoroDoc();
+                    const doc = new LoroDoc<LoroSchema>();
                     doc.import(response.snapshot);
                     yield* Effect.all([
                       manager.put({

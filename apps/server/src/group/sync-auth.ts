@@ -5,6 +5,7 @@ import { DateTime, Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
 import { AuthorizationLive } from "../middleware/authorization";
 import { MasterAuthorizationLive } from "../middleware/master-authorization";
+import { VersionCheckLive } from "../middleware/version-check";
 import { Drizzle } from "../services/drizzle";
 import { Jwt } from "../services/jwt";
 
@@ -234,6 +235,7 @@ export const SyncAuthGroupLive = HttpApiBuilder.group(
     Drizzle.Default,
     AuthorizationLive,
     MasterAuthorizationLive,
+    VersionCheckLive,
     Jwt.Default,
   ])
 );

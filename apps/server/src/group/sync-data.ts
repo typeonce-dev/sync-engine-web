@@ -2,10 +2,15 @@ import { HttpApiBuilder } from "@effect/platform";
 import { SnapshotToLoroDoc } from "@local/schema";
 import { AuthWorkspace, SyncApi } from "@local/sync";
 import { and, desc, eq, gt, isNull, or } from "drizzle-orm";
-import { Array, Effect, Layer, Schema } from "effect";
+import { Array, Data, Effect, Layer, Schema } from "effect";
 import { tokenTable, workspaceTable } from "../db/schema";
 import { AuthorizationLive } from "../middleware/authorization";
+import { VersionCheckLive } from "../middleware/version-check";
 import { Drizzle } from "../services/drizzle";
+
+class InvalidVersionError extends Data.TaggedError("InvalidVersionError")<{
+  reason: "missing" | "outdated";
+}> {}
 
 export const SyncDataGroupLive = HttpApiBuilder.group(
   SyncApi,
@@ -132,4 +137,4 @@ export const SyncDataGroupLive = HttpApiBuilder.group(
           )
         );
     })
-).pipe(Layer.provide([Drizzle.Default, AuthorizationLive]));
+).pipe(Layer.provide([Drizzle.Default, AuthorizationLive, VersionCheckLive]));

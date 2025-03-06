@@ -9,6 +9,10 @@ export class TempWorkspace extends Effect.Service<TempWorkspace>()(
     effect: Effect.gen(function* () {
       const { query } = yield* Dexie;
       return {
+        getAll: query((_) => _.temp_workspace.toArray()).pipe(
+          Effect.flatMap(Schema.decode(Schema.Array(TempWorkspaceTable)))
+        ),
+
         put: (params: typeof TempWorkspaceTable.Type) =>
           Schema.encode(TempWorkspaceTable)(params).pipe(
             Effect.flatMap((data) => query((_) => _.temp_workspace.put(data)))

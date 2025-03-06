@@ -26,6 +26,19 @@ export class DatabaseError extends Schema.TaggedError<DatabaseError>()(
   HttpApiSchema.annotations({ status: 500 })
 ) {}
 
+export class VersionError extends Schema.TaggedError<VersionError>()(
+  "VersionError",
+  {
+    reason: Schema.Literal(
+      "missing-snapshot",
+      "invalid-doc",
+      "missing-version",
+      "outdated-version"
+    ),
+  },
+  HttpApiSchema.annotations({ status: 400 })
+) {}
+
 export const ClientId = Schema.UUID;
 export const WorkspaceId = Schema.UUID;
 
@@ -66,6 +79,11 @@ export class AuthWorkspace extends Context.Tag("AuthWorkspace")<
   WorkspaceTable
 >() {}
 
+export class ValidDoc extends Context.Tag("ValidDoc")<
+  ValidDoc,
+  typeof Snapshot.Type
+>() {}
+
 const authKey = "x-api-key";
 export const ApiKey = HttpApiSecurity.apiKey({
   in: "header",
@@ -75,6 +93,14 @@ export const ApiKey = HttpApiSecurity.apiKey({
 const ApiKeyHeader = Schema.Struct({
   [authKey]: Schema.String,
 });
+
+export class VersionCheck extends HttpApiMiddleware.Tag<VersionCheck>()(
+  "VersionCheck",
+  {
+    failure: VersionError,
+    provides: ValidDoc,
+  }
+) {}
 
 export class Authorization extends HttpApiMiddleware.Tag<Authorization>()(
   "Authorization",
@@ -117,6 +143,7 @@ export class SyncAuthGroup extends HttpApiGroup.make("syncAuth")
           snapshot: WorkspaceTable.fields.snapshot,
         })
       )
+      .middleware(VersionCheck)
   )
   .add(
     /**
@@ -198,6 +225,7 @@ export class SyncDataGroup extends HttpApiGroup.make("syncData")
       )
       .setHeaders(ApiKeyHeader)
       .middleware(Authorization)
+      .middleware(VersionCheck)
   )
   .add(
     /**

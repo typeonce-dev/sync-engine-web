@@ -1,6 +1,8 @@
 import { WorkerRunner } from "@effect/platform";
 import { BrowserWorkerRunner } from "@effect/platform-browser";
+import type { LoroSchema } from "@local/schema";
 import { Effect, Layer } from "effect";
+import { LoroDoc } from "loro-crdt";
 import { RuntimeClient } from "../lib/runtime-client";
 import { Sync } from "../lib/services/sync";
 import { TempWorkspace } from "../lib/services/temp-workspace";
@@ -26,6 +28,10 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
       });
 
       if (tempUpdates !== undefined) {
+        const docI = new LoroDoc<LoroSchema>();
+        docI.import(tempUpdates.snapshot);
+        yield* Effect.log("Doc", tempUpdates, docI.toJSON());
+
         yield* push({
           workspaceId: workspace.workspaceId,
           snapshot: tempUpdates.snapshot,

@@ -9,7 +9,11 @@ export const Route = createRootRoute({
     RuntimeClient.runPromise(
       Effect.gen(function* () {
         const { initClient } = yield* Dexie;
-        return yield* initClient;
+        // const { migrate } = yield* Migration;
+
+        const clientId = yield* initClient;
+        // yield* migrate;
+        return clientId;
       })
     ),
 });

@@ -4,6 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { startTransition, useEffect } from "react";
 import { useActivity } from "../../lib/hooks/use-activity";
+import { useMetadata } from "../../lib/hooks/use-metadata";
 import { RuntimeClient } from "../../lib/runtime-client";
 import { LoroStorage } from "../../lib/services/loro-storage";
 import { WorkspaceManager } from "../../lib/services/workspace-manager";
@@ -41,6 +42,9 @@ export const Route = createFileRoute("/$workspaceId/")({
 function RouteComponent() {
   const workspace = Route.useLoaderData();
 
+  const { data: metadata } = useMetadata({
+    workspaceId: workspace.workspaceId,
+  });
   const { data, error, loading } = useActivity({
     workspaceId: workspace.workspaceId,
   });
@@ -50,13 +54,15 @@ function RouteComponent() {
     Effect.gen(function* () {
       const loroStorage = yield* LoroStorage;
 
-      const name = formData.get("name") as string;
+      const firstName = formData.get("firstName") as string;
+      const lastName = formData.get("lastName") as string;
 
       yield* loroStorage.insertActivity({
         workspaceId: workspace.workspaceId,
         value: {
           id: crypto.randomUUID(),
-          name,
+          firstName,
+          lastName,
         },
       });
     })
@@ -89,6 +95,7 @@ function RouteComponent() {
 
   return (
     <div>
+      <pre>{JSON.stringify(metadata)}</pre>
       <Link
         to="/$workspaceId/token"
         params={{ workspaceId: workspace.workspaceId }}
@@ -109,7 +116,8 @@ function RouteComponent() {
       </button>
 
       <form action={onAdd}>
-        <input type="text" name="name" />
+        <input type="text" name="firstName" />
+        <input type="text" name="lastName" />
         <button type="submit">Add activity</button>
       </form>
 
@@ -118,7 +126,8 @@ function RouteComponent() {
         {error && <pre>{JSON.stringify(error, null, 2)}</pre>}
         {(data ?? []).map((activity) => (
           <div key={activity.id}>
-            <label>Name {activity.name}</label>
+            <p>First name: {activity.firstName}</p>
+            <p>Last name: {activity.lastName}</p>
           </div>
         ))}
       </div>
