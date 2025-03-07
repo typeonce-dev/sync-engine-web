@@ -1,8 +1,8 @@
 import { SnapshotSchema } from "@local/schema";
 import { Snapshot } from "@local/sync";
 import { Effect, Schema } from "effect";
-import { Dexie } from "../dexie";
 import { WorkspaceTable } from "../schema";
+import { Dexie } from "./dexie";
 
 export class WorkspaceManager extends Effect.Service<WorkspaceManager>()(
   "WorkspaceManager",

@@ -1,18 +1,17 @@
+import { RuntimeLib, Service, useActionEffect } from "@local/client-lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Duration, Effect } from "effect";
-import { ApiClient } from "../../lib/api-client";
 import { WEBSITE_URL } from "../../lib/constants";
-import { RuntimeClient } from "../../lib/runtime-client";
-import { WorkspaceManager } from "../../lib/services/workspace-manager";
-import { useActionEffect } from "../../lib/use-action-effect";
 
 export const Route = createFileRoute("/$workspaceId/token")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
-    RuntimeClient.runPromise(
+    RuntimeLib.runPromise(
       Effect.gen(function* () {
-        const api = yield* ApiClient;
-        const token = yield* WorkspaceManager.getById({ workspaceId }).pipe(
+        const api = yield* Service.ApiClient;
+        const token = yield* Service.WorkspaceManager.getById({
+          workspaceId,
+        }).pipe(
           Effect.flatMap((workspace) => Effect.fromNullable(workspace?.token))
         );
 
@@ -33,7 +32,7 @@ function RouteComponent() {
 
   const [, onIssueToken, issuing] = useActionEffect((formData: FormData) =>
     Effect.gen(function* () {
-      const api = yield* ApiClient;
+      const api = yield* Service.ApiClient;
 
       const clientId = formData.get("clientId") as string;
 
@@ -53,7 +52,7 @@ function RouteComponent() {
 
   const [, onRevoke, revoking] = useActionEffect((formData: FormData) =>
     Effect.gen(function* () {
-      const api = yield* ApiClient;
+      const api = yield* Service.ApiClient;
 
       const clientId = formData.get("clientId") as string;
 

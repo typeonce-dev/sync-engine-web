@@ -1,8 +1,8 @@
 import type { LoroSchema } from "@local/schema";
 import { Effect, flow, Option } from "effect";
 import { LoroDoc } from "loro-crdt";
-import { ApiClient } from "../api-client";
-import { Dexie } from "../dexie";
+import { ApiClient } from "./api-client";
+import { Dexie } from "./dexie";
 import { TempWorkspace } from "./temp-workspace";
 import { WorkspaceManager } from "./workspace-manager";
 

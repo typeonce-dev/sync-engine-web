@@ -4,7 +4,7 @@ import {
   type ClientTable,
   type TempWorkspaceTable,
   type WorkspaceTable,
-} from "./schema";
+} from "../schema";
 
 class QueryApiError extends Data.TaggedError("QueryApiError")<{
   cause: unknown;

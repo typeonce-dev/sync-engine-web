@@ -1,6 +1,6 @@
 import { Effect, type ManagedRuntime } from "effect";
 import { useActionState } from "react";
-import { RuntimeClient } from "./runtime-client";
+import { RuntimeLib } from "./runtime-lib";
 
 export const useActionEffect = <Payload, A, E>(
   effect: (
@@ -8,7 +8,7 @@ export const useActionEffect = <Payload, A, E>(
   ) => Effect.Effect<
     A,
     E,
-    ManagedRuntime.ManagedRuntime.Context<typeof RuntimeClient>
+    ManagedRuntime.ManagedRuntime.Context<typeof RuntimeLib>
   >
 ) => {
   return useActionState<
@@ -18,7 +18,7 @@ export const useActionEffect = <Payload, A, E>(
     Payload
   >(
     (_, payload) =>
-      RuntimeClient.runPromise(
+      RuntimeLib.runPromise(
         effect(payload).pipe(
           Effect.match({
             onFailure: (error) => ({ error, data: null }),

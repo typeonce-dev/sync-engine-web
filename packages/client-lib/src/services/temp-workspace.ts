@@ -1,6 +1,6 @@
 import { Effect, Schema } from "effect";
-import { Dexie } from "../dexie";
 import { TempWorkspaceTable } from "../schema";
+import { Dexie } from "./dexie";
 
 export class TempWorkspace extends Effect.Service<TempWorkspace>()(
   "TempWorkspace",

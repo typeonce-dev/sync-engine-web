@@ -9,9 +9,8 @@
   },
   "devDependencies": {},
   "peerDependencies": {
-    "loro-crdt": "^1.4.2"
-  },
-  "dependencies": {
+    "loro-crdt": "^1.4.2",
     "effect": "^3.13.2"
-  }
+  },
+  "dependencies": {}
 }

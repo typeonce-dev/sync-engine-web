@@ -1,12 +1,10 @@
+import { RuntimeLib, Service, useActionEffect } from "@local/client-lib";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Effect } from "effect";
-import { RuntimeClient } from "../lib/runtime-client";
-import { WorkspaceManager } from "../lib/services/workspace-manager";
-import { useActionEffect } from "../lib/use-action-effect";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
-  loader: () => RuntimeClient.runPromise(WorkspaceManager.getAll),
+  loader: () => RuntimeLib.runPromise(Service.WorkspaceManager.getAll),
 });
 
 function HomeComponent() {
@@ -15,7 +13,7 @@ function HomeComponent() {
 
   const [, joinWorkspace] = useActionEffect(() =>
     Effect.gen(function* () {
-      const workspace = yield* WorkspaceManager.create;
+      const workspace = yield* Service.WorkspaceManager.create;
       yield* Effect.sync(() =>
         navigate({
           to: `/$workspaceId`,

@@ -1,27 +1,28 @@
 import { Worker } from "@effect/platform";
 import { BrowserWorker } from "@effect/platform-browser";
+import {
+  RuntimeLib,
+  Service,
+  SyncWorker,
+  useActionEffect,
+} from "@local/client-lib";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { startTransition, useEffect } from "react";
 import { useActivity } from "../../lib/hooks/use-activity";
 import { useMetadata } from "../../lib/hooks/use-metadata";
-import { RuntimeClient } from "../../lib/runtime-client";
-import { LoroStorage } from "../../lib/services/loro-storage";
-import { WorkspaceManager } from "../../lib/services/workspace-manager";
-import { useActionEffect } from "../../lib/use-action-effect";
-import { Bootstrap, LiveQuery } from "../../workers/schema";
 
 const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
   Effect.gen(function* () {
     const pool = yield* Worker.makePoolSerialized({ size: 1 });
-    return yield* pool.broadcast(new Bootstrap({ workspaceId }));
+    return yield* pool.broadcast(new SyncWorker.Bootstrap({ workspaceId }));
   }).pipe(
     Effect.scoped,
     Effect.provide(
       BrowserWorker.layer(
         () =>
           new globalThis.Worker(
-            new URL("./src/workers/sync.ts", globalThis.origin),
+            new URL("./src/workers/bootstrap.ts", globalThis.origin),
             { type: "module" }
           )
       )
@@ -32,8 +33,8 @@ const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
 export const Route = createFileRoute("/$workspaceId/")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
-    RuntimeClient.runPromise(
-      WorkspaceManager.getById({ workspaceId }).pipe(
+    RuntimeLib.runPromise(
+      Service.WorkspaceManager.getById({ workspaceId }).pipe(
         Effect.flatMap(Effect.fromNullable),
         Effect.tap(({ workspaceId }) => bootstrap({ workspaceId }))
       )
@@ -53,7 +54,7 @@ function RouteComponent() {
   const [, onBootstrap, bootstrapping] = useActionEffect(bootstrap);
   const [, onAdd] = useActionEffect((formData: FormData) =>
     Effect.gen(function* () {
-      const loroStorage = yield* LoroStorage;
+      const loroStorage = yield* Service.LoroStorage;
 
       const firstName = formData.get("firstName") as string;
       const lastName = formData.get("lastName") as string;
@@ -74,11 +75,11 @@ function RouteComponent() {
     const url = new URL("./src/workers/live.ts", globalThis.origin);
     const newWorker = new globalThis.Worker(url, { type: "module" });
 
-    void RuntimeClient.runPromise(
+    void RuntimeLib.runPromise(
       Effect.gen(function* () {
         const pool = yield* Worker.makePoolSerialized({ size: 1 });
         return yield* pool.broadcast(
-          new LiveQuery({ workspaceId: workspace.workspaceId })
+          new SyncWorker.LiveQuery({ workspaceId: workspace.workspaceId })
         );
       }).pipe(
         Effect.scoped,

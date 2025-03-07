@@ -1,0 +1,26 @@
+{
+  "name": "@local/client-lib",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "exports": {
+    ".": "./src/main.ts"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3"
+  },
+  "peerDependencies": {
+    "@effect/platform": "^0.77.2",
+    "effect": "^3.13.2",
+    "@local/sync": "workspace:*",
+    "@local/schema": "workspace:*",
+    "dexie": "^4.0.11",
+    "dexie-react-hooks": "^1.1.7",
+    "loro-crdt": "^1.4.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "dependencies": {}
+}

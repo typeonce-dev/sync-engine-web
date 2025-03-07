@@ -1,19 +1,15 @@
 import { WorkerRunner } from "@effect/platform";
 import { BrowserWorkerRunner } from "@effect/platform-browser";
+import { RuntimeLib, Service, SyncWorker } from "@local/client-lib";
 import { Effect, Layer } from "effect";
-import { RuntimeClient } from "../lib/runtime-client";
-import { Sync } from "../lib/services/sync";
-import { TempWorkspace } from "../lib/services/temp-workspace";
-import { WorkspaceManager } from "../lib/services/workspace-manager";
-import { WorkerMessage } from "./schema";
 
-const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
+const WorkerLive = WorkerRunner.layerSerialized(SyncWorker.WorkerMessage, {
   Bootstrap: (params) =>
     Effect.gen(function* () {
-      const { push, pull } = yield* Sync;
+      const { push, pull } = yield* Service.Sync;
 
-      const manager = yield* WorkspaceManager;
-      const temp = yield* TempWorkspace;
+      const manager = yield* Service.WorkspaceManager;
+      const temp = yield* Service.TempWorkspace;
 
       yield* Effect.log(`Running workspace '${params.workspaceId}'`);
 
@@ -43,4 +39,4 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
     ),
 }).pipe(Layer.provide(BrowserWorkerRunner.layer));
 
-RuntimeClient.runFork(WorkerRunner.launch(WorkerLive));
+RuntimeLib.runFork(WorkerRunner.launch(WorkerLive));

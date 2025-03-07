@@ -1,19 +1,17 @@
+import { RuntimeLib, Service } from "@local/client-lib";
 import { Outlet, createRootRoute } from "@tanstack/react-router";
 import { Effect } from "effect";
-import { Dexie } from "../lib/dexie";
-import { RuntimeClient } from "../lib/runtime-client";
-import { Migration } from "../lib/services/migration";
 
 export const Route = createRootRoute({
   component: RootComponent,
   loader: () =>
-    RuntimeClient.runPromise(
-      Migration.pipe(
+    RuntimeLib.runPromise(
+      Service.Migration.pipe(
         Effect.flatMap((migration) => migration.migrate),
         Effect.catchAll((error) => Effect.logError("Migration error", error)),
         Effect.andThen(
           Effect.gen(function* () {
-            const { initClient } = yield* Dexie;
+            const { initClient } = yield* Service.Dexie;
             return yield* initClient;
           })
         )

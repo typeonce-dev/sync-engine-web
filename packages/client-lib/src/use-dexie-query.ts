@@ -1,7 +1,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import { Data, Effect, Either, flow, Match, pipe, Schema } from "effect";
-import { Dexie } from "./dexie";
-import { RuntimeClient } from "./runtime-client";
+import { RuntimeLib } from "./runtime-lib";
+import { Dexie } from "./services/dexie";
 
 class DexieError extends Data.TaggedError("DexieError")<{
   reason: "invalid-data" | "query-error";
@@ -16,7 +16,7 @@ export const useDexieQuery = <A, I>(
 ) => {
   const results = useLiveQuery(
     () =>
-      RuntimeClient.runPromise(
+      RuntimeLib.runPromise(
         Effect.gen(function* () {
           const { db } = yield* Dexie;
           return yield* Effect.tryPromise({

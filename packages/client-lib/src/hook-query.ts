@@ -1,8 +1,8 @@
 import { SnapshotSchema, type LoroSchema } from "@local/schema";
 import { Effect, Schema } from "effect";
 import { LoroDoc } from "loro-crdt";
-import { TempWorkspace } from "../services/temp-workspace";
-import { WorkspaceManager } from "../services/workspace-manager";
+import { TempWorkspace } from "./services/temp-workspace";
+import { WorkspaceManager } from "./services/workspace-manager";
 
 export const hookQuery = ({ workspaceId }: { workspaceId: string }) =>
   Effect.gen(function* () {

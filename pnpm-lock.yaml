@@ -26,6 +26,9 @@ importers:
       '@effect/platform-browser':
         specifier: ^0.56.2
         version: 0.56.2(@effect/platform@0.77.2(effect@3.13.2))(effect@3.13.2)
+      '@local/client-lib':
+        specifier: workspace:*
+        version: link:../../packages/client-lib
       '@local/schema':
         specifier: workspace:*
         version: link:../../packages/schema
@@ -121,6 +124,43 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
+
+  packages/client-lib:
+    dependencies:
+      '@effect/platform':
+        specifier: ^0.77.2
+        version: 0.77.2(effect@3.13.2)
+      '@local/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@local/sync':
+        specifier: workspace:*
+        version: link:../sync
+      dexie:
+        specifier: ^4.0.11
+        version: 4.0.11
+      dexie-react-hooks:
+        specifier: ^1.1.7
+        version: 1.1.7(@types/react@19.0.8)(dexie@4.0.11)(react@19.0.0)
+      effect:
+        specifier: ^3.13.2
+        version: 3.13.2
+      loro-crdt:
+        specifier: ^1.4.2
+        version: 1.4.2
+      react:
+        specifier: ^19.0.0
+        version: 19.0.0
+      react-dom:
+        specifier: ^19.0.0
+        version: 19.0.0(react@19.0.0)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.8
+        version: 19.0.8
+      '@types/react-dom':
+        specifier: ^19.0.3
+        version: 19.0.3(@types/react@19.0.8)
 
   packages/schema:
     dependencies:
