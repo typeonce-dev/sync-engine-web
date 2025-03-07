@@ -1,4 +1,4 @@
-import { Activity, type LoroSchema } from "@local/schema";
+import { Activity, VERSION, type LoroSchema } from "@local/schema";
 import { Effect, Schema } from "effect";
 import { LoroDoc, LoroMap, VersionVector } from "loro-crdt";
 import { TempWorkspace } from "./temp-workspace";
@@ -21,6 +21,7 @@ export class LoroStorage extends Effect.Service<LoroStorage>()("LoroStorage", {
       ).pipe(
         Effect.map(({ workspace, tempWorkspace }) => {
           const doc = new LoroDoc<LoroSchema>();
+          doc.getMap("metadata").set("version", VERSION);
 
           if (workspace !== undefined) {
             doc.import(workspace.snapshot);

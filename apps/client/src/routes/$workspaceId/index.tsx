@@ -25,7 +25,8 @@ const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
             { type: "module" }
           )
       )
-    )
+    ),
+    Effect.catchAll((error) => Effect.logError("Bootstrap error", error))
   );
 
 export const Route = createFileRoute("/$workspaceId/")({

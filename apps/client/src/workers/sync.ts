@@ -30,7 +30,7 @@ const WorkerLive = WorkerRunner.layerSerialized(WorkerMessage, {
       if (tempUpdates !== undefined) {
         const docI = new LoroDoc<LoroSchema>();
         docI.import(tempUpdates.snapshot);
-        yield* Effect.log("Doc", tempUpdates, docI.toJSON());
+        yield* Effect.log("Doc", docI.toJSON());
 
         yield* push({
           workspaceId: workspace.workspaceId,
