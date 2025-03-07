@@ -64,6 +64,7 @@ function RouteComponent() {
           id: crypto.randomUUID(),
           firstName,
           lastName,
+          age: 10,
         },
       });
     })
@@ -129,6 +130,7 @@ function RouteComponent() {
           <div key={activity.id}>
             <p>First name: {activity.firstName}</p>
             <p>Last name: {activity.lastName}</p>
+            {activity.age && <p>Age: {activity.age}</p>}
           </div>
         ))}
       </div>

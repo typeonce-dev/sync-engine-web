@@ -1,8 +1,11 @@
 import { ParseResult, Schema } from "effect";
 import { LoroDoc, LoroList, LoroMap } from "loro-crdt";
-import { ActivitySchema, ActivityV1 } from "./schema";
+import { ActivitySchema, ActivityV1, type ActivityV2 } from "./schema";
 
-export const VERSION = 2;
+const Version = [1, 2, 3] as const;
+export type Version = (typeof Version)[number];
+
+export const VERSION = 3 satisfies Version;
 
 const AnyLoroDocSchema = Schema.instanceOf(LoroDoc);
 
@@ -32,7 +35,7 @@ export class SnapshotSchema extends Schema.Class<SnapshotSchema>(
   };
 }
 
-const migrations: Record<number, (doc: LoroDoc) => LoroDoc> = {
+const migrations = {
   1: (doc) => {
     const metadata = doc.getMap("metadata");
     metadata.set("version", VERSION);
@@ -58,7 +61,24 @@ const migrations: Record<number, (doc: LoroDoc) => LoroDoc> = {
 
     return doc;
   },
-};
+  "3": (doc) => {
+    const metadata = doc.getMap("metadata");
+    metadata.set("version", 3);
+
+    const activity = doc.getList("activity");
+    for (let i = 0; i < activity.length; i++) {
+      const item = activity.get(i) as LoroMap<typeof ActivityV2.Encoded>;
+      const map = new LoroMap();
+      map.set("id", item.get("id"));
+      map.set("firstName", item.get("firstName"));
+      map.set("lastName", item.get("lastName"));
+      map.set("age", undefined);
+      activity.insertContainer(i, map);
+    }
+
+    return doc;
+  },
+} satisfies Record<Version, (doc: LoroDoc) => LoroDoc>;
 
 export const LoroDocMigration = AnyLoroDocSchema.pipe(
   Schema.transformOrFail(AnyLoroDocSchema, {
@@ -69,20 +89,9 @@ export const LoroDocMigration = AnyLoroDocSchema.pipe(
       const currentVersion = metadata.get("version");
 
       if (typeof currentVersion === "number") {
-        for (let version = currentVersion + 1; version <= VERSION; version++) {
-          const migration = migrations[version];
-          if (migration === undefined) {
-            return ParseResult.fail(
-              new ParseResult.Type(
-                ast,
-                from,
-                `Migration from version ${version - 1} to ${version} not found`
-              )
-            );
-          }
-
-          doc.import(migration(doc).export({ mode: "snapshot" }));
-        }
+        Version.forEach((version) => {
+          doc.import(migrations[version](doc).export({ mode: "snapshot" }));
+        });
       } else {
         return ParseResult.fail(
           new ParseResult.Type(ast, from, "Invalid version number in metadata")

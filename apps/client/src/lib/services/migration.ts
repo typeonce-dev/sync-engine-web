@@ -12,6 +12,9 @@ export class Migration extends Effect.Service<Migration>()("Migration", {
     const temp = yield* TempWorkspace;
     return {
       migrate: temp.getAll.pipe(
+        Effect.tap((workspaces) =>
+          Effect.log(`Migrating ${workspaces.length} workspaces`)
+        ),
         Effect.flatMap((workspaces) =>
           Effect.all(
             workspaces.map((workspace) =>
@@ -38,6 +41,9 @@ export class Migration extends Effect.Service<Migration>()("Migration", {
               })
             )
           )
+        ),
+        Effect.tap(() =>
+          Effect.log("Migration completed successfully for all workspaces")
         )
       ),
     };

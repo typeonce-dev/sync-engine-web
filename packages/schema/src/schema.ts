@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import type { Version } from "./main";
 
 export class ActivityV1 extends Schema.Class<ActivityV1>("ActivityV1")({
   id: Schema.UUID,
@@ -11,7 +12,15 @@ export class ActivityV2 extends Schema.Class<ActivityV2>("ActivityV2")({
   lastName: Schema.String,
 }) {}
 
+export class ActivityV3 extends Schema.Class<ActivityV3>("ActivityV3")({
+  id: Schema.UUID,
+  firstName: Schema.String,
+  lastName: Schema.String,
+  age: Schema.UndefinedOr(Schema.Number),
+}) {}
+
 export const ActivitySchema = {
   1: ActivityV1,
   2: ActivityV2,
-} as const;
+  3: ActivityV3,
+} as const satisfies Record<Version, Schema.Schema.AnyNoContext>;
