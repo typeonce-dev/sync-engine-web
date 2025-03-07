@@ -29,8 +29,7 @@ export const VersionCheckLive = Layer.effect(
 
       yield* Effect.log("Checking doc", doc.toJSON());
 
-      const metadata = doc.getMap("metadata");
-      const currentVersion = metadata.get("version");
+      const currentVersion = doc.getMap("metadata").get("version");
 
       yield* Effect.log("Current version", currentVersion);
 

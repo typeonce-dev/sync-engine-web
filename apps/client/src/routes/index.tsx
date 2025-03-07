@@ -39,7 +39,7 @@ function HomeComponent() {
       ))}
 
       <div>
-        <button type="button" onClick={() => joinWorkspace(undefined)}>
+        <button type="button" onClick={joinWorkspace}>
           Create workspace
         </button>
       </div>

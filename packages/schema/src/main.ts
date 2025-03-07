@@ -2,10 +2,13 @@ import { ParseResult, Schema } from "effect";
 import { LoroDoc, LoroList, LoroMap } from "loro-crdt";
 import { ActivitySchema, ActivityV1, type ActivityV2 } from "./schema";
 
+/** 👇 Versioning management */
+
 const Version = [1, 2, 3] as const;
 export type Version = (typeof Version)[number];
-
 export const VERSION = 3 satisfies Version;
+
+/** 👆 Versioning management */
 
 const AnyLoroDocSchema = Schema.instanceOf(LoroDoc);
 
@@ -25,28 +28,20 @@ export class SnapshotSchema extends Schema.Class<SnapshotSchema>(
 }) {
   static readonly EmptyDoc = () => {
     const doc = new LoroDoc<LoroSchema>();
-
-    const metadata = doc.getMap("metadata");
-    metadata.set("version", VERSION);
-
+    doc.getMap("metadata").set("version", VERSION);
     doc.getList("activity");
-
     return doc;
   };
 }
 
 const migrations = {
   1: (doc) => {
-    const metadata = doc.getMap("metadata");
-    metadata.set("version", VERSION);
-
+    doc.getMap("metadata").set("version", VERSION);
     doc.getList("activity");
-
     return doc;
   },
   2: (doc) => {
-    const metadata = doc.getMap("metadata");
-    metadata.set("version", 2);
+    doc.getMap("metadata").set("version", 2);
 
     const activity = doc.getList("activity");
     for (let i = 0; i < activity.length; i++) {
@@ -61,9 +56,8 @@ const migrations = {
 
     return doc;
   },
-  "3": (doc) => {
-    const metadata = doc.getMap("metadata");
-    metadata.set("version", 3);
+  3: (doc) => {
+    doc.getMap("metadata").set("version", 3);
 
     const activity = doc.getList("activity");
     for (let i = 0; i < activity.length; i++) {
@@ -85,8 +79,7 @@ export const LoroDocMigration = AnyLoroDocSchema.pipe(
     decode: (from, _, ast) => {
       const doc = new LoroDoc();
       doc.import(from.export({ mode: "snapshot" }));
-      const metadata = doc.getMap("metadata");
-      const currentVersion = metadata.get("version");
+      const currentVersion = doc.getMap("metadata").get("version");
 
       if (typeof currentVersion === "number") {
         Version.forEach((version) => {
