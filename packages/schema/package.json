@@ -5,7 +5,8 @@
     "typecheck": "tsc"
   },
   "exports": {
-    ".": "./src/main.ts"
+    ".": "./src/main.ts",
+    "./migrations": "./src/migrations.ts"
   },
   "devDependencies": {},
   "peerDependencies": {

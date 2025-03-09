@@ -1,4 +1,5 @@
-import { LoroDocMigration, SnapshotToLoroDoc } from "@local/schema";
+import { SnapshotToLoroDoc } from "@local/schema";
+import { LoroDocMigration } from "@local/schema/migrations";
 import { Data, Effect, Schema, type ParseResult } from "effect";
 import { TempWorkspace } from "./temp-workspace";
 

@@ -1,5 +1,8 @@
 import { Schema } from "effect";
-import type { Version } from "./main";
+import { LoroDoc } from "loro-crdt";
+import { type Version } from "./versioning";
+
+export const AnyLoroDocSchema = Schema.instanceOf(LoroDoc);
 
 export class ActivityV1 extends Schema.Class<ActivityV1>("ActivityV1")({
   id: Schema.UUID,
