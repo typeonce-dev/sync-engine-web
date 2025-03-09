@@ -1,16 +1,12 @@
 import { Worker } from "@effect/platform";
 import { BrowserWorker } from "@effect/platform-browser";
-import {
-  RuntimeLib,
-  Service,
-  SyncWorker,
-  useActionEffect,
-} from "@local/client-lib";
+import { Service, SyncWorker, useActionEffect } from "@local/client-lib";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { startTransition, useEffect } from "react";
-import { useActivity } from "../../lib/hooks/use-activity";
-import { useMetadata } from "../../lib/hooks/use-metadata";
+import { useFood } from "../../lib/hooks/use-food";
+import { RuntimeClient } from "../../lib/runtime-client";
+import { Storage } from "../../lib/storage";
 
 const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
   Effect.gen(function* () {
@@ -33,7 +29,7 @@ const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
 export const Route = createFileRoute("/$workspaceId/")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
-    RuntimeLib.runPromise(
+    RuntimeClient.runPromise(
       Service.WorkspaceManager.getById({ workspaceId }).pipe(
         Effect.flatMap(Effect.fromNullable),
         Effect.tap(({ workspaceId }) => bootstrap({ workspaceId }))
@@ -44,28 +40,27 @@ export const Route = createFileRoute("/$workspaceId/")({
 function RouteComponent() {
   const workspace = Route.useLoaderData();
 
-  const { data: metadata } = useMetadata({
-    workspaceId: workspace.workspaceId,
-  });
-  const { data, error, loading } = useActivity({
+  const { data, error, loading } = useFood({
     workspaceId: workspace.workspaceId,
   });
 
-  const [, onBootstrap, bootstrapping] = useActionEffect(bootstrap);
-  const [, onAdd] = useActionEffect((formData: FormData) =>
+  const [, onBootstrap, bootstrapping] = useActionEffect(
+    RuntimeClient,
+    bootstrap
+  );
+  const [, onAdd] = useActionEffect(RuntimeClient, (formData: FormData) =>
     Effect.gen(function* () {
-      const loroStorage = yield* Service.LoroStorage;
+      const loroStorage = yield* Storage;
 
-      const firstName = formData.get("firstName") as string;
-      const lastName = formData.get("lastName") as string;
+      const name = formData.get("name") as string;
+      const calories = formData.get("calories") as string;
 
-      yield* loroStorage.insertActivity({
+      yield* loroStorage.insertFood({
         workspaceId: workspace.workspaceId,
         value: {
           id: crypto.randomUUID(),
-          firstName,
-          lastName,
-          age: 10,
+          name,
+          calories: parseInt(calories, 10),
         },
       });
     })
@@ -75,7 +70,7 @@ function RouteComponent() {
     const url = new URL("./src/workers/live.ts", globalThis.origin);
     const newWorker = new globalThis.Worker(url, { type: "module" });
 
-    void RuntimeLib.runPromise(
+    void RuntimeClient.runPromise(
       Effect.gen(function* () {
         const pool = yield* Worker.makePoolSerialized({ size: 1 });
         return yield* pool.broadcast(
@@ -98,7 +93,6 @@ function RouteComponent() {
 
   return (
     <div>
-      <pre>{JSON.stringify(metadata)}</pre>
       <Link
         to="/$workspaceId/token"
         params={{ workspaceId: workspace.workspaceId }}
@@ -119,19 +113,18 @@ function RouteComponent() {
       </button>
 
       <form action={onAdd}>
-        <input type="text" name="firstName" />
-        <input type="text" name="lastName" />
-        <button type="submit">Add activity</button>
+        <input type="text" name="name" />
+        <input type="number" name="calories" min={1} />
+        <button type="submit">Add food</button>
       </form>
 
       <div>
         {loading && <p>Loading...</p>}
         {error && <pre>{JSON.stringify(error, null, 2)}</pre>}
-        {(data ?? []).map((activity) => (
-          <div key={activity.id}>
-            <p>First name: {activity.firstName}</p>
-            <p>Last name: {activity.lastName}</p>
-            {activity.age && <p>Age: {activity.age}</p>}
+        {(data ?? []).map((food) => (
+          <div key={food.id}>
+            <p>Name: {food.name}</p>
+            <p>Calories: {food.calories}</p>
           </div>
         ))}
       </div>

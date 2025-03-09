@@ -1,11 +1,12 @@
 import { Schema } from "effect";
 import { LoroDoc, LoroList, LoroMap } from "loro-crdt";
-import { AnyLoroDocSchema, CurrentSchema, Table } from "./schema";
+import { AnyLoroDocSchema, Table, VersioningSchema } from "./schema";
 import type { Version } from "./versioning";
 
 export const VERSION = 1 satisfies Version;
+const CurrentSchema = VersioningSchema[VERSION];
 
-export const Metadata = Schema.Struct({ version: Schema.Number });
+const Metadata = Schema.Struct({ version: Schema.Number });
 
 export type LoroSchema = {
   metadata: LoroMap<typeof Metadata.Encoded>;

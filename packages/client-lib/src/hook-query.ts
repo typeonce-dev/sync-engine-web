@@ -1,10 +1,13 @@
-import { SnapshotSchema, type LoroSchema } from "@local/schema";
-import { Effect, Schema } from "effect";
+import { type LoroSchema } from "@local/schema";
+import { Effect } from "effect";
 import { LoroDoc } from "loro-crdt";
 import { TempWorkspace } from "./services/temp-workspace";
 import { WorkspaceManager } from "./services/workspace-manager";
 
-export const hookQuery = ({ workspaceId }: { workspaceId: string }) =>
+export const hookQuery = <A>(
+  extract: (doc: LoroDoc<LoroSchema>) => A,
+  { workspaceId }: { workspaceId: string }
+) =>
   Effect.gen(function* () {
     const temp = yield* TempWorkspace;
     const manager = yield* WorkspaceManager;
@@ -21,6 +24,5 @@ export const hookQuery = ({ workspaceId }: { workspaceId: string }) =>
       doc.import(tempWorkspace.snapshot);
     }
 
-    const json = doc.toJSON() as unknown;
-    return yield* Schema.decodeUnknown(SnapshotSchema)(json);
+    return extract(doc);
   });

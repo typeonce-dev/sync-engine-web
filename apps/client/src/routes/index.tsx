@@ -1,17 +1,18 @@
-import { RuntimeLib, Service, useActionEffect } from "@local/client-lib";
+import { Service, useActionEffect } from "@local/client-lib";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Effect } from "effect";
+import { RuntimeClient } from "../lib/runtime-client";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
-  loader: () => RuntimeLib.runPromise(Service.WorkspaceManager.getAll),
+  loader: () => RuntimeClient.runPromise(Service.WorkspaceManager.getAll),
 });
 
 function HomeComponent() {
   const allWorkspaces = Route.useLoaderData();
   const navigate = useNavigate();
 
-  const [, joinWorkspace] = useActionEffect(() =>
+  const [, joinWorkspace] = useActionEffect(RuntimeClient, () =>
     Effect.gen(function* () {
       const workspace = yield* Service.WorkspaceManager.create;
       yield* Effect.sync(() =>

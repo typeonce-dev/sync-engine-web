@@ -1,6 +1,5 @@
 import { Schema } from "effect";
 import { LoroDoc } from "loro-crdt";
-import { VERSION } from "./main";
 import { type Version } from "./versioning";
 
 export const AnyLoroDocSchema = Schema.instanceOf(LoroDoc);
@@ -18,11 +17,9 @@ export class MealV1 extends Schema.Class<MealV1>("MealV1")({
 }) {}
 
 export const Table = Schema.Literal("food", "meal");
-const VersioningSchema = {
+export const VersioningSchema = {
   1: Schema.Struct({
     [Table.literals[0]]: Schema.Array(FoodV1),
     [Table.literals[1]]: Schema.Array(MealV1),
   }),
 } as const satisfies Record<Version, Schema.Schema.AnyNoContext>;
-
-export const CurrentSchema = VersioningSchema[VERSION];
