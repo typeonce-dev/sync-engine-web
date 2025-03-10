@@ -4,7 +4,7 @@ import { AnyLoroDocSchema, Table, VersioningSchema } from "./schema";
 import type { Version } from "./versioning";
 
 export const VERSION = 1 satisfies Version;
-const CurrentSchema = VersioningSchema[VERSION];
+export const CurrentSchema = VersioningSchema[VERSION];
 
 const Metadata = Schema.Struct({ version: Schema.Number });
 
@@ -20,6 +20,8 @@ export class SnapshotSchema extends Schema.Class<SnapshotSchema>(
   metadata: Metadata,
   ...CurrentSchema.fields,
 }) {
+  static readonly Table = Table;
+
   static readonly EmptyDoc = () => {
     const doc = new LoroDoc<LoroSchema>();
     doc.getMap("metadata").set("version", VERSION);

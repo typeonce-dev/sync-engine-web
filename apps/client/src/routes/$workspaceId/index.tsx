@@ -5,6 +5,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Effect } from "effect";
 import { startTransition, useEffect } from "react";
 import { useFood } from "../../lib/hooks/use-food";
+import { useMeal } from "../../lib/hooks/use-meal";
 import { RuntimeClient } from "../../lib/runtime-client";
 import { Storage } from "../../lib/storage";
 
@@ -44,11 +45,16 @@ function RouteComponent() {
     workspaceId: workspace.workspaceId,
   });
 
+  const { data: meals } = useMeal({
+    workspaceId: workspace.workspaceId,
+  });
+
   const [, onBootstrap, bootstrapping] = useActionEffect(
     RuntimeClient,
     bootstrap
   );
-  const [, onAdd] = useActionEffect(RuntimeClient, (formData: FormData) =>
+
+  const [, onAddFood] = useActionEffect(RuntimeClient, (formData: FormData) =>
     Effect.gen(function* () {
       const loroStorage = yield* Storage;
 
@@ -61,6 +67,24 @@ function RouteComponent() {
           id: crypto.randomUUID(),
           name,
           calories: parseInt(calories, 10),
+        },
+      });
+    })
+  );
+
+  const [, onAddMeal] = useActionEffect(RuntimeClient, (formData: FormData) =>
+    Effect.gen(function* () {
+      const loroStorage = yield* Storage;
+
+      const foodId = formData.get("foodId") as string;
+      const quantity = formData.get("quantity") as string;
+
+      yield* loroStorage.insertMeal({
+        workspaceId: workspace.workspaceId,
+        value: {
+          id: crypto.randomUUID(),
+          foodId,
+          quantity: parseInt(quantity, 10),
         },
       });
     })
@@ -112,7 +136,7 @@ function RouteComponent() {
         {bootstrapping ? "Bootstrapping..." : "Bootstrap"}
       </button>
 
-      <form action={onAdd}>
+      <form action={onAddFood}>
         <input type="text" name="name" />
         <input type="number" name="calories" min={1} />
         <button type="submit">Add food</button>
@@ -125,6 +149,26 @@ function RouteComponent() {
           <div key={food.id}>
             <p>Name: {food.name}</p>
             <p>Calories: {food.calories}</p>
+          </div>
+        ))}
+      </div>
+
+      <form action={onAddMeal}>
+        {(data ?? []).map((food) => (
+          <div key={food.id}>
+            <input type="radio" name="foodId" id={food.id} value={food.id} />
+            <label htmlFor={food.id}>{food.name}</label>
+          </div>
+        ))}
+        <input type="number" name="quantity" min={1} />
+        <button type="submit">Add meal</button>
+      </form>
+
+      <div>
+        {(meals ?? []).map((meal) => (
+          <div key={meal.id}>
+            <p>Food: {meal.food?.name}</p>
+            <p>Quantity: {meal.quantity}</p>
           </div>
         ))}
       </div>

@@ -1,6 +1,6 @@
 import { SnapshotSchema, type LoroSchema } from "@local/schema";
-import { Effect } from "effect";
-import { LoroDoc } from "loro-crdt";
+import { Effect, Schema } from "effect";
+import { LoroDoc, type LoroList, type LoroMap } from "loro-crdt";
 import { TempWorkspace } from "./temp-workspace";
 import { WorkspaceManager } from "./workspace-manager";
 
@@ -34,10 +34,20 @@ export class LoroStorage extends Effect.Service<LoroStorage>()("LoroStorage", {
         })
       );
 
-    const query = <A>(
-      extract: (doc: LoroDoc<LoroSchema>) => A,
+    const query = <A extends Record<string, unknown>>(
+      extract: (doc: LoroDoc<LoroSchema>) => LoroList<LoroMap<A>>,
+      schema: Schema.Schema<A>,
       { workspaceId }: { workspaceId: string }
-    ) => load({ workspaceId }).pipe(Effect.map(({ doc }) => extract(doc)));
+    ) =>
+      Effect.gen(function* () {
+        const { doc } = yield* load({ workspaceId });
+        const data = extract(doc);
+        const list = data.toArray();
+        return yield* Effect.all(
+          list.map((item) => Schema.decode(schema)(item.toJSON() as A)),
+          { concurrency: 10 }
+        );
+      });
 
     return { load, query } as const;
   }),

@@ -1,6 +1,5 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Data, Effect, Either, Match, pipe, Schema } from "effect";
-import { type LoroList, type LoroMap } from "loro-crdt";
+import { Data, Effect, Either, Function, Match, pipe } from "effect";
 import { Dexie } from "./services/dexie";
 
 class MissingData extends Data.TaggedError("MissingData")<{}> {}
@@ -9,9 +8,8 @@ class DexieError extends Data.TaggedError("DexieError")<{
   cause: unknown;
 }> {}
 
-export const useDexieQuery = <A, I extends Record<string, unknown>>(
-  query: (db: (typeof Dexie.Service)["db"]) => Promise<LoroList<LoroMap<I>>>,
-  schema: Schema.Schema<A, I>,
+export const useDexieQuery = <A, I>(
+  query: (db: (typeof Dexie.Service)["db"]) => Promise<I>,
   deps: unknown[] = []
 ) => {
   const results = useLiveQuery(
@@ -31,18 +29,7 @@ export const useDexieQuery = <A, I extends Record<string, unknown>>(
   return pipe(
     results,
     Either.fromNullable(() => new MissingData()),
-    Either.flatMap(
-      Either.match({
-        onLeft: Either.left,
-        onRight: (container) =>
-          pipe(
-            Schema.decodeEither(Schema.Array(schema))(container.toJSON()),
-            Either.mapLeft(
-              (cause) => new DexieError({ reason: "invalid-data", cause })
-            )
-          ),
-      })
-    ),
+    Either.flatMap(Function.identity),
     Either.match({
       onLeft: (_) =>
         Match.value(_).pipe(
