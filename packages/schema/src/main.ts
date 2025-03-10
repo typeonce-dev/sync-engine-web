@@ -9,7 +9,7 @@ const CurrentSchema = VersioningSchema[VERSION];
 const Metadata = Schema.Struct({ version: Schema.Number });
 
 export type LoroSchema = {
-  metadata: LoroMap<typeof Metadata.Encoded>;
+  metadata: LoroMap<Partial<typeof Metadata.Encoded>>;
   food: LoroList<LoroMap<typeof CurrentSchema.fields.food.value.Encoded>>;
   meal: LoroList<LoroMap<typeof CurrentSchema.fields.meal.value.Encoded>>;
 };

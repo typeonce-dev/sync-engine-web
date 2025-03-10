@@ -24,6 +24,8 @@ export class Migration extends Effect.Service<Migration>()("Migration", {
                   workspace.snapshot
                 );
 
+                yield* Effect.log(doc.toJSON());
+
                 const newDoc = yield* Schema.decode(LoroDocMigration)(doc).pipe(
                   Effect.catchTag(
                     "ParseError",

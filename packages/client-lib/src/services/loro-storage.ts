@@ -1,4 +1,4 @@
-import { VERSION, type LoroSchema } from "@local/schema";
+import { SnapshotSchema, type LoroSchema } from "@local/schema";
 import { Effect } from "effect";
 import { LoroDoc } from "loro-crdt";
 import { TempWorkspace } from "./temp-workspace";
@@ -20,8 +20,7 @@ export class LoroStorage extends Effect.Service<LoroStorage>()("LoroStorage", {
         { concurrency: "unbounded" }
       ).pipe(
         Effect.map(({ workspace, tempWorkspace }) => {
-          const doc = new LoroDoc<LoroSchema>();
-          doc.getMap("metadata").set("version", VERSION);
+          const doc = SnapshotSchema.EmptyDoc();
 
           if (workspace !== undefined) {
             doc.import(workspace.snapshot);
@@ -35,6 +34,11 @@ export class LoroStorage extends Effect.Service<LoroStorage>()("LoroStorage", {
         })
       );
 
-    return { load };
+    const query = <A>(
+      extract: (doc: LoroDoc<LoroSchema>) => A,
+      { workspaceId }: { workspaceId: string }
+    ) => load({ workspaceId }).pipe(Effect.map(({ doc }) => extract(doc)));
+
+    return { load, query } as const;
   }),
 }) {}
