@@ -1,28 +1,31 @@
 import { Schema } from "effect";
 import { LoroDoc, LoroList, LoroMap } from "loro-crdt";
-import { ActivitySchema, AnyLoroDocSchema } from "./schema";
+import { AnyLoroDocSchema, Table, VersioningSchema } from "./schema";
 import type { Version } from "./versioning";
 
-export const VERSION = 3 satisfies Version;
+export const VERSION = 1 satisfies Version;
+const CurrentSchema = VersioningSchema[VERSION];
 
-export const Metadata = Schema.Struct({ version: Schema.Number });
-export const Activity = ActivitySchema[VERSION];
+const Metadata = Schema.Struct({ version: Schema.Number });
 
 export type LoroSchema = {
   metadata: LoroMap<typeof Metadata.Encoded>;
-  activity: LoroList<LoroMap<typeof Activity.Encoded>>;
+  food: LoroList<LoroMap<typeof CurrentSchema.fields.food.value.Encoded>>;
+  meal: LoroList<LoroMap<typeof CurrentSchema.fields.meal.value.Encoded>>;
 };
 
 export class SnapshotSchema extends Schema.Class<SnapshotSchema>(
   "SnapshotSchema"
 )({
   metadata: Metadata,
-  activity: Schema.Array(Activity),
+  ...CurrentSchema.fields,
 }) {
   static readonly EmptyDoc = () => {
     const doc = new LoroDoc<LoroSchema>();
     doc.getMap("metadata").set("version", VERSION);
-    doc.getList("activity");
+    Table.literals.map((key) => {
+      doc.getList(key);
+    });
     return doc;
   };
 }

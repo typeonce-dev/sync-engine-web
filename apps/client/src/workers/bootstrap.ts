@@ -1,7 +1,8 @@
 import { WorkerRunner } from "@effect/platform";
 import { BrowserWorkerRunner } from "@effect/platform-browser";
-import { RuntimeLib, SyncWorker } from "@local/client-lib";
+import { SyncWorker } from "@local/client-lib";
 import { Effect, Layer } from "effect";
+import { RuntimeClient } from "../lib/runtime-client";
 
 const WorkerLive = WorkerRunner.layerSerialized(SyncWorker.WorkerMessage, {
   Bootstrap: (params) =>
@@ -11,4 +12,4 @@ const WorkerLive = WorkerRunner.layerSerialized(SyncWorker.WorkerMessage, {
     }),
 }).pipe(Layer.provide(BrowserWorkerRunner.layer));
 
-RuntimeLib.runFork(WorkerRunner.launch(WorkerLive));
+RuntimeClient.runFork(WorkerRunner.launch(WorkerLive));

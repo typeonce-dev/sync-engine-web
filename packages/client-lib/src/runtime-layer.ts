@@ -1,4 +1,4 @@
-import { Layer, ManagedRuntime } from "effect";
+import { Layer } from "effect";
 import { ApiClient } from "./services/api-client";
 import { Dexie } from "./services/dexie";
 import { LoroStorage } from "./services/loro-storage";
@@ -8,7 +8,7 @@ import { TempWorkspace } from "./services/temp-workspace";
 import { WorkspaceManager } from "./services/workspace-manager";
 import { SyncWorker } from "./sync-worker";
 
-const MainLayer = Layer.mergeAll(
+export const RuntimeLayer = Layer.mergeAll(
   Dexie.Default,
   ApiClient.Default,
   WorkspaceManager.Default,
@@ -18,5 +18,3 @@ const MainLayer = Layer.mergeAll(
   Migration.Default,
   SyncWorker.Default
 );
-
-export const RuntimeLib = ManagedRuntime.make(MainLayer);

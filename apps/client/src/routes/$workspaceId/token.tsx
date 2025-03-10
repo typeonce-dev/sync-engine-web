@@ -1,12 +1,13 @@
-import { RuntimeLib, Service, useActionEffect } from "@local/client-lib";
+import { Service, useActionEffect } from "@local/client-lib";
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { Duration, Effect } from "effect";
 import { WEBSITE_URL } from "../../lib/constants";
+import { RuntimeClient } from "../../lib/runtime-client";
 
 export const Route = createFileRoute("/$workspaceId/token")({
   component: RouteComponent,
   loader: ({ params: { workspaceId } }) =>
-    RuntimeLib.runPromise(
+    RuntimeClient.runPromise(
       Effect.gen(function* () {
         const api = yield* Service.ApiClient;
         const token = yield* Service.WorkspaceManager.getById({
@@ -30,39 +31,43 @@ function RouteComponent() {
   const { tokens, token } = Route.useLoaderData();
   const router = useRouter();
 
-  const [, onIssueToken, issuing] = useActionEffect((formData: FormData) =>
-    Effect.gen(function* () {
-      const api = yield* Service.ApiClient;
+  const [, onIssueToken, issuing] = useActionEffect(
+    RuntimeClient,
+    (formData: FormData) =>
+      Effect.gen(function* () {
+        const api = yield* Service.ApiClient;
 
-      const clientId = formData.get("clientId") as string;
+        const clientId = formData.get("clientId") as string;
 
-      yield* api.client.syncAuth.issueToken({
-        path: { workspaceId },
-        headers: { "x-api-key": token },
-        payload: {
-          clientId,
-          expiresIn: Duration.days(30),
-          scope: "read_write",
-        },
-      });
+        yield* api.client.syncAuth.issueToken({
+          path: { workspaceId },
+          headers: { "x-api-key": token },
+          payload: {
+            clientId,
+            expiresIn: Duration.days(30),
+            scope: "read_write",
+          },
+        });
 
-      yield* Effect.promise(() => router.invalidate({ sync: true }));
-    })
+        yield* Effect.promise(() => router.invalidate({ sync: true }));
+      })
   );
 
-  const [, onRevoke, revoking] = useActionEffect((formData: FormData) =>
-    Effect.gen(function* () {
-      const api = yield* Service.ApiClient;
+  const [, onRevoke, revoking] = useActionEffect(
+    RuntimeClient,
+    (formData: FormData) =>
+      Effect.gen(function* () {
+        const api = yield* Service.ApiClient;
 
-      const clientId = formData.get("clientId") as string;
+        const clientId = formData.get("clientId") as string;
 
-      yield* api.client.syncAuth.revokeToken({
-        path: { workspaceId, clientId },
-        headers: { "x-api-key": token },
-      });
+        yield* api.client.syncAuth.revokeToken({
+          path: { workspaceId, clientId },
+          headers: { "x-api-key": token },
+        });
 
-      yield* Effect.promise(() => router.invalidate({ sync: true }));
-    })
+        yield* Effect.promise(() => router.invalidate({ sync: true }));
+      })
   );
 
   return (

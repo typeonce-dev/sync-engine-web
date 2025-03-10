@@ -1,29 +1,29 @@
 import { useLiveQuery } from "dexie-react-hooks";
-import { Data, Effect, Either, flow, Match, pipe, Schema } from "effect";
-import { RuntimeLib } from "./runtime-lib";
+import { Data, Effect, Either, Match, pipe, Schema } from "effect";
+import { type LoroList, type LoroMap } from "loro-crdt";
 import { Dexie } from "./services/dexie";
 
+class MissingData extends Data.TaggedError("MissingData")<{}> {}
 class DexieError extends Data.TaggedError("DexieError")<{
   reason: "invalid-data" | "query-error";
   cause: unknown;
 }> {}
-class MissingData extends Data.TaggedError("MissingData")<{}> {}
 
-export const useDexieQuery = <A, I>(
-  query: (db: (typeof Dexie.Service)["db"]) => Promise<I[]>,
+export const useDexieQuery = <A, I extends Record<string, unknown>>(
+  query: (db: (typeof Dexie.Service)["db"]) => Promise<LoroList<LoroMap<I>>>,
   schema: Schema.Schema<A, I>,
   deps: unknown[] = []
 ) => {
   const results = useLiveQuery(
     () =>
-      RuntimeLib.runPromise(
+      Effect.runPromise(
         Effect.gen(function* () {
           const { db } = yield* Dexie;
           return yield* Effect.tryPromise({
             try: () => query(db),
             catch: (cause) => new DexieError({ reason: "query-error", cause }),
           });
-        }).pipe(Effect.either)
+        }).pipe(Effect.either, Effect.provide(Dexie.Default))
       ),
     deps
   );
@@ -34,12 +34,13 @@ export const useDexieQuery = <A, I>(
     Either.flatMap(
       Either.match({
         onLeft: Either.left,
-        onRight: flow(
-          Schema.decodeEither(Schema.Array(schema)),
-          Either.mapLeft(
-            (cause) => new DexieError({ reason: "invalid-data", cause })
-          )
-        ),
+        onRight: (container) =>
+          pipe(
+            Schema.decodeEither(Schema.Array(schema))(container.toJSON()),
+            Either.mapLeft(
+              (cause) => new DexieError({ reason: "invalid-data", cause })
+            )
+          ),
       })
     ),
     Either.match({
