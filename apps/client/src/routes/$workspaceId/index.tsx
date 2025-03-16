@@ -7,7 +7,7 @@ import { startTransition, useEffect } from "react";
 import { useFood } from "../../lib/hooks/use-food";
 import { useMeal } from "../../lib/hooks/use-meal";
 import { RuntimeClient } from "../../lib/runtime-client";
-import { Storage } from "../../lib/storage";
+import { Storage } from "../../lib/services/storage";
 
 const bootstrap = ({ workspaceId }: { workspaceId: string }) =>
   Effect.gen(function* () {

@@ -1,6 +1,6 @@
 import { RuntimeLayer } from "@local/client-lib";
 import { Layer, ManagedRuntime } from "effect";
-import { Storage } from "./storage";
+import { Storage } from "./services/storage";
 
 const MainLayer = Layer.mergeAll(RuntimeLayer, Storage.Default);
 
